@@ -153,7 +153,7 @@ namespace Terreno
             graphics.SetVertexBuffer(vertexBuffer);
             graphics.Indices = indexBuffer;
 
-            // Set your desired filter settings  
+            //Define os filtros desejados
             SamplerState sampler = new SamplerState();
             sampler.Filter = TextureFilter.Anisotropic;
             sampler.MaxAnisotropy = 16;
