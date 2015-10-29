@@ -272,7 +272,7 @@ namespace Terreno
             Matrix cameraRotation = Matrix.CreateRotationX(updownRot) * Matrix.CreateRotationY(leftrightRot);
             Vector3 rotatedVector = Vector3.Transform(vectorToAdd, cameraRotation);
             position += moveSpeed * rotatedVector;
-            UpdateViewMatrix();
+            UpdateViewMatrix();4
         }
 
         /// <summary>
