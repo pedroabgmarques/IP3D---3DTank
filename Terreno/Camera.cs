@@ -39,7 +39,7 @@ namespace Terreno
         static public BoundingFrustum frustum;
         //Tamanho do "mundo"
         static public int worldSize = 1024;
-        //Near e far plane
+        //Plano perto e longe
         static public float nearPlane = 0.1f;
         static public float farPlane = worldSize;
 
