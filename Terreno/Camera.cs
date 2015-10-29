@@ -131,7 +131,7 @@ namespace Terreno
 
             switch (tipoCamera)
             {
-                case TipoCamera.FPS1:
+                case TipoCamera.FPS:
                     
                     float alturaHeightmap = getAlturaFromHeightmap();
                     position.Y = alturaHeightmap;
