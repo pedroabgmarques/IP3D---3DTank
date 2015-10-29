@@ -102,7 +102,7 @@ namespace Terreno
             efeitoDeepWater.AmbientLightColor = new Vector3(0.05f, 0.05f, 0.05f);
             efeitoDeepWater.EmissiveColor = new Vector3(0, 0, 0);
             efeitoDeepWater.DirectionalLight0.Enabled = true;
-            efeitoDeepWater.Alpha = 0.5f;
+            efeitoDeepWater.Alpha = 0.4f;
             efeitoDeepWater.FogColor = new Color(0, 0, 15).ToVector3();
             efeitoDeepWater.FogEnabled = true;
             efeitoDeepWater.FogStart = Camera.nearPlane;
@@ -119,7 +119,7 @@ namespace Terreno
             efeitoWater.AmbientLightColor = new Vector3(0.05f, 0.05f, 0.05f);
             efeitoWater.EmissiveColor = new Vector3(0f, 0f, 0f);
             efeitoWater.DirectionalLight0.Enabled = true;
-            efeitoWater.Alpha = 0.8f;
+            efeitoWater.Alpha = 0.6f;
             efeitoWater.FogColor = new Color(0, 0, 15).ToVector3();
             efeitoWater.FogEnabled = true;
             efeitoWater.FogStart = Camera.nearPlane;

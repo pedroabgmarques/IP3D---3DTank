@@ -76,10 +76,10 @@ namespace Terreno
             farPlane = Terrain.altura + (Terrain.altura / 2);
 
             //Posição inicial da camâra
-            position = new Vector3(10, 20, 30);
+            position = new Vector3(30, 20, 30);
 
             //Vector de direção inicial
-            direction = new Vector3(0, -1f, 0);
+            direction = new Vector3(0, 0, -1f);
 
             //Colocar o rato no centro do ecrã
             Mouse.SetPosition(graphics.Viewport.Height / 2, graphics.Viewport.Width / 2);
@@ -319,7 +319,7 @@ namespace Terreno
 
             cameraRotation = Matrix.CreateFromYawPitchRoll(yaw, 0, pitch);
             World = cameraRotation;
-            direction = Vector3.Transform(new Vector3(1, -0.5f, 0), cameraRotation);
+            direction = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
             target = position + direction;
             View = Matrix.CreateLookAt(position, target, Vector3.Up);
         }

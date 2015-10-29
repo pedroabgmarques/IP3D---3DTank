@@ -112,7 +112,7 @@ namespace Terreno
             //Levantar todos os vértices
             for (int i = 0; i < vertexes.Length; i++)
             {
-                vertexes[i].Position.Y = vertexes[i].Position.Y + 0.51f;
+                vertexes[i].Position.Y = vertexes[i].Position.Y + 0.21f;
             }
 
             //Desenhar Novamente
@@ -130,7 +130,7 @@ namespace Terreno
             //Baixar todos os vértices
             for (int i = 0; i < vertexes.Length; i++)
             {
-                vertexes[i].Position.Y = vertexes[i].Position.Y - 0.51f;
+                vertexes[i].Position.Y = vertexes[i].Position.Y - 0.21f;
             }
 
         }
