@@ -78,7 +78,7 @@ namespace Terreno
             efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(7, 5, 4);
             efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
             efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0, 0.025f, 0);
-            efeitoTerrain.AmbientLightColor = new Vector3(0.3f, 0.3f, 0.03f);
+            efeitoTerrain.AmbientLightColor = new Vector3(0.8f, 0.8f, 0.8f);
             efeitoTerrain.EmissiveColor = new Vector3(0.8f, 0.8f, 0.4f);
             efeitoTerrain.DirectionalLight0.Enabled = true;
             efeitoTerrain.FogColor = new Color(0, 0, 15).ToVector3();

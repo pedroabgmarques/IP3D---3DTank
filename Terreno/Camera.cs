@@ -32,7 +32,7 @@ namespace Terreno
         //Velocidade da rotação
         const float rotationSpeed = 0.3f;
         //Velocidade do movimento com o rato
-        static float moveSpeed = 1f;
+        static float moveSpeed = 5f;
         //Estado do rato
         static private MouseState originalMouseState;
         //BoundingFrustum da camâra
