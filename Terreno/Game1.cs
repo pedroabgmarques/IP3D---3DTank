@@ -16,6 +16,8 @@ namespace Terreno
         float anguloLuz;
         float stepAnguloLuz;
         Random random;
+        SpriteFont spriteFont;
+        SpriteBatch spriteBatch;
 
         public Game1()
         {
@@ -52,10 +54,13 @@ namespace Terreno
         /// </summary>
         protected override void LoadContent()
         {
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+
             //Load assets
             heightmap = Content.Load<Texture2D>("heightmap");
             terrainTexture = Content.Load<Texture2D>("terrainTexture");
             waterTexture = Content.Load<Texture2D>("water_texture");
+            spriteFont = Content.Load<SpriteFont>("arial_12");
 
             //Generate terrain
             Terrain.GenerateTerrain(GraphicsDevice, heightmap);
@@ -79,12 +84,12 @@ namespace Terreno
             efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
             efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0, 0.025f, 0);
             efeitoTerrain.AmbientLightColor = new Vector3(0.8f, 0.8f, 0.8f);
-            efeitoTerrain.EmissiveColor = new Vector3(0.8f, 0.8f, 0.4f);
+            efeitoTerrain.EmissiveColor = new Vector3(0f, 0f, 0f);
             efeitoTerrain.DirectionalLight0.Enabled = true;
             efeitoTerrain.FogColor = new Color(0, 0, 15).ToVector3();
             efeitoTerrain.FogEnabled = true;
             efeitoTerrain.FogStart = Camera.nearPlane;
-            efeitoTerrain.FogEnd = heightmap.Width;
+            efeitoTerrain.FogEnd = Camera.farPlane;
 
             efeitoDeepWater = new BasicEffect(GraphicsDevice);
             efeitoDeepWater.Texture = waterTexture;
@@ -94,14 +99,14 @@ namespace Terreno
             efeitoDeepWater.DirectionalLight0.DiffuseColor = new Vector3(1f, 0.2f, 0.7f);
             efeitoDeepWater.DirectionalLight0.Direction = new Vector3(0, 1, 0);
             efeitoDeepWater.DirectionalLight0.SpecularColor = new Vector3(0, 0.025f, 0);
-            efeitoDeepWater.AmbientLightColor = new Vector3(0, 0, 0);
+            efeitoDeepWater.AmbientLightColor = new Vector3(0.05f, 0.05f, 0.05f);
             efeitoDeepWater.EmissiveColor = new Vector3(0, 0, 0);
             efeitoDeepWater.DirectionalLight0.Enabled = true;
             efeitoDeepWater.Alpha = 0.5f;
             efeitoDeepWater.FogColor = new Color(0, 0, 15).ToVector3();
             efeitoDeepWater.FogEnabled = true;
             efeitoDeepWater.FogStart = Camera.nearPlane;
-            efeitoDeepWater.FogEnd = heightmap.Width;
+            efeitoDeepWater.FogEnd = Camera.farPlane;
 
             efeitoWater = new BasicEffect(GraphicsDevice);
             efeitoWater.Texture = waterTexture;
@@ -111,14 +116,14 @@ namespace Terreno
             efeitoWater.DirectionalLight0.DiffuseColor = new Vector3(0.5f, 0.125f, 0.35f);
             efeitoWater.DirectionalLight0.Direction = new Vector3(0, 1, 0);
             efeitoWater.DirectionalLight0.SpecularColor = new Vector3(0, 0.0125f, 0);
-            efeitoWater.AmbientLightColor = new Vector3(0f, 0f, 0f);
+            efeitoWater.AmbientLightColor = new Vector3(0.05f, 0.05f, 0.05f);
             efeitoWater.EmissiveColor = new Vector3(0f, 0f, 0f);
             efeitoWater.DirectionalLight0.Enabled = true;
             efeitoWater.Alpha = 0.8f;
             efeitoWater.FogColor = new Color(0, 0, 15).ToVector3();
             efeitoWater.FogEnabled = true;
             efeitoWater.FogStart = Camera.nearPlane;
-            efeitoWater.FogEnd = heightmap.Width;
+            efeitoWater.FogEnd = Camera.farPlane;
 
             anguloLuz = MathHelper.ToRadians(90);
             stepAnguloLuz = MathHelper.TwoPi / (360 * 5);
@@ -172,6 +177,17 @@ namespace Terreno
             Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);
 
             DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
+
+            ////DEBUG
+            ////Escrever a posição da camara no ecra
+            //spriteBatch.Begin();
+            //spriteBatch.DrawString(spriteFont,
+            //    "Camera: " + Camera.getPosition().X.ToString() + "; " + Camera.getPosition().Y.ToString() + "; " + Camera.getPosition().Z.ToString(), Vector2.Zero, Color.White);
+            //spriteBatch.End();
+
+            ////Repor os estados alterados pelo spritebatch
+            //GraphicsDevice.BlendState = BlendState.Opaque;
+            //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
             base.Draw(gameTime);
         }

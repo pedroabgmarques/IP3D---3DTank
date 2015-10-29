@@ -12,85 +12,104 @@ namespace Terreno
     enum TipoCamera
     {
         FPS,
-        Free,
-        thirdPerson
+        Free
     }
 
     static class Camera
     {
 
-        //Matrizes World, View e Projection
-        static public Matrix World, View, Projection;
+        //Matrizes World, View, Projection
+        static public Matrix View, Projection, World;
 
-        //Posição da camara
-        static private Vector3 position;
+        //Posição, direção e target
+        static private Vector3 position, direction, target;
 
-        //Rotação horizontal
-        static float leftrightRot = 0f;
-        //Rotação vertical
-        static float updownRot = 0f;
+        //Position getter
+        static public Vector3 getPosition()
+        {
+            return position;
+        }
+
+        //Velocidade do movimento (translação)
+        static private float moveSpeed = 0.1f;
+
         //Velocidade da rotação
-        const float rotationSpeed = 0.3f;
-        //Velocidade do movimento com o rato
-        static float moveSpeed = 5f;
-        //Estado do rato
-        static private MouseState originalMouseState;
-        //BoundingFrustum da camâra
-        static public BoundingFrustum frustum;
-        //Tamanho do "mundo"
-        static public int worldSize = 1024;
+        static private float rotationSpeed = 0.005f;
+
+        //Orientação da camara
+        static private float yaw = 0, pitch = 0;
+        
+        //Quantidade de pixeis que o rato se moveu
+        static private Vector2 mouseMoved;
+
+        //Matriz de rotação da camara
+        static private Matrix cameraRotation;
+
+        //Posição original do rato
+        static private MouseState mouseStateOriginal;
+
+        //Posição anterior do rato
+        static private MouseState mouseStateAnterior;
+
+        //Estado anterior do teclado
+        static KeyboardState keyStateAnterior;
+
         //Near e far plane
         static public float nearPlane = 0.1f;
-        static public float farPlane = worldSize;
+        static public float farPlane;
 
+        //RasterizerStates para solid / wireframe
         static RasterizerState rasterizerStateSolid;
         static RasterizerState rasterizerStateWireFrame;
 
-        static KeyboardState keyStateAnterior;
-        static MouseState mouseStateAnterior;
-
+        //Desenhar normais do terreno
         static public bool drawNormals = false;
 
+        //Tipo de camara (FPS, livre)
         static public TipoCamera tipoCamera;
 
-        /// <summary>
-        /// Inicializa os componentes da camara
-        /// </summary>
-        /// <param name="graphics">Instância de GraphicsDevice</param>
+
         static public void Initialize(GraphicsDevice graphics)
         {
-
             tipoCamera = TipoCamera.FPS;
 
+            farPlane = Terrain.altura + (Terrain.altura / 2);
+
             //Posição inicial da camâra
-            position = new Vector3(10, 30, 20);
+            position = new Vector3(10, 20, 30);
+
+            //Vector de direção inicial
+            direction = new Vector3(0, -1f, 0);
+
+            //Colocar o rato no centro do ecrã
+            Mouse.SetPosition(graphics.Viewport.Height / 2, graphics.Viewport.Width / 2);
+
+            //Guardar a posição original do rato
+            mouseStateOriginal = Mouse.GetState();
+
             //Inicializar as matrizes world, view e projection
             World = Matrix.Identity;
+            Foward();
             UpdateViewMatrix();
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
                 graphics.Viewport.AspectRatio,
                 nearPlane,
                 farPlane);
 
-            //Criar e definir o resterizerState a utilizar para desenhar a geometria
+            //Criar e definir os resterizerStates a utilizar para desenhar a geometria
+            //SOLID
             rasterizerStateSolid = new RasterizerState();
-            //Desenha todas as faces, independentemente da orientação
             rasterizerStateSolid.CullMode = CullMode.None;
             rasterizerStateSolid.MultiSampleAntiAlias = true;
             rasterizerStateSolid.FillMode = FillMode.Solid;
             rasterizerStateSolid.SlopeScaleDepthBias = 0.1f;
             graphics.RasterizerState = rasterizerStateSolid;
 
+            //WIREFRAME
             rasterizerStateWireFrame = new RasterizerState();
-            //Desenha todas as faces, independentemente da orientação
             rasterizerStateWireFrame.CullMode = CullMode.None;
             rasterizerStateWireFrame.MultiSampleAntiAlias = true;
-            rasterizerStateWireFrame.FillMode = FillMode.WireFrame;
-
-            //Coloca o rato no centro do ecrã
-            Mouse.SetPosition(graphics.Viewport.Width / 2, graphics.Viewport.Height / 2);
-
-            originalMouseState = Mouse.GetState();
+            rasterizerStateWireFrame.FillMode = FillMode.WireFrame;         
         }
 
         static private float getAlturaFromHeightmap()
@@ -99,7 +118,7 @@ namespace Terreno
             int xCamera, zCamera;
             xCamera = (int)position.X;
             zCamera = (int)position.Z;
-            
+
             //Os 4 vértices que rodeiam a posição da camara
             Vector2 pontoA, pontoB, pontoC, pontoD;
             pontoA = new Vector2(xCamera, zCamera);
@@ -123,106 +142,90 @@ namespace Terreno
             return Y + 1;
         }
 
-        /// <summary>
-        /// Calcula e atualiza a ViewMatrix para cada frame, consoante a posição e rotação da camâra
-        /// </summary>
-        static private void UpdateViewMatrix()
+        static private void Foward()
         {
-
-            switch (tipoCamera)
-            {
-                case TipoCamera.FPS:
-                    
-                    float alturaHeightmap = getAlturaFromHeightmap();
-                    position.Y = alturaHeightmap;
-
-                    //Cálculo da matriz de rotação
-                    Matrix cameraRotation = Matrix.CreateRotationX(updownRot) * Matrix.CreateRotationY(leftrightRot);
-                    //Target
-                    Vector3 cameraOriginalTarget = new Vector3(0, 0, -1);
-                    Vector3 cameraRotatedTarget = Vector3.Transform(cameraOriginalTarget, cameraRotation);
-                    Vector3 cameraFinalTarget = position + cameraRotatedTarget;
-                    //Cálculo do vector Up
-                    Vector3 cameraOriginalUpVector = new Vector3(0, 1, 0);
-                    Vector3 cameraRotatedUpVector = Vector3.Transform(cameraOriginalUpVector, cameraRotation);
-                    //Matriz View
-                    View = Matrix.CreateLookAt(position, cameraFinalTarget, cameraRotatedUpVector);
-                    break;
-                case TipoCamera.Free:
-                    //Cálculo da matriz de rotação
-                    cameraRotation = Matrix.CreateRotationX(updownRot) * Matrix.CreateRotationY(leftrightRot);
-                    //Target
-                    cameraOriginalTarget = new Vector3(0, 0, -1);
-                    cameraRotatedTarget = Vector3.Transform(cameraOriginalTarget, cameraRotation);
-                    cameraFinalTarget = position + cameraRotatedTarget;
-                    //Cálculo do vector Up
-                    cameraOriginalUpVector = new Vector3(0, 1, 0);
-                    cameraRotatedUpVector = Vector3.Transform(cameraOriginalUpVector, cameraRotation);
-                    //Matriz View
-                    View = Matrix.CreateLookAt(position, cameraFinalTarget, cameraRotatedUpVector);
-                    break;
-                case TipoCamera.thirdPerson:
-                    break;
-                default:
-                    break;
-            }               
-           
-            //Atualiza o frustum
-            frustum = new BoundingFrustum(View * Projection);
+            position = position + moveSpeed * direction;
+            target = position + direction;
         }
 
-        /// <summary>
-        /// Implementa os controlos da camâra
-        /// </summary>
-        /// <param name="amount">Tempo decorrido desde o ultimo update</param>
-        /// <param name="graphics">Instância de graphicsDevice</param>
-        static private void ProcessInput(float amount, GraphicsDevice graphics)
+        static private void Backward()
         {
-            //Movimento do rato
-            MouseState currentMouseState = Mouse.GetState();
-            if (currentMouseState != originalMouseState)
-            {
-                float xDifference = currentMouseState.X - originalMouseState.X;
-                float yDifference = currentMouseState.Y - originalMouseState.Y;
-                leftrightRot -= rotationSpeed * xDifference * amount;
-                updownRot -= rotationSpeed * yDifference * amount;
-                try
-                {
-                    Mouse.SetPosition(graphics.Viewport.Width / 2, graphics.Viewport.Height / 2);
-                }
-                catch (Exception)
-                {
-                    //Impede de dar erro quando se sai do programa
-                }
-                UpdateViewMatrix();
-            }
+            position = position - moveSpeed * direction;
+            target = position + direction;
+        }
 
-            if (Mouse.GetState().ScrollWheelValue > mouseStateAnterior.ScrollWheelValue)
-            {
-                moveSpeed += (Mouse.GetState().ScrollWheelValue - mouseStateAnterior.ScrollWheelValue) / 100;
-            }
-            if (Mouse.GetState().ScrollWheelValue < mouseStateAnterior.ScrollWheelValue)
-            {
-                if (moveSpeed > 0.5f) moveSpeed -= (mouseStateAnterior.ScrollWheelValue - Mouse.GetState().ScrollWheelValue) / 50;
-                if (moveSpeed < 0.2f) moveSpeed = 0.2f;
-            }
+        static private void Up()
+        {
+            position = position + moveSpeed * Vector3.Up;
+            target = position + direction;
+        }
+
+        static private void Down()
+        {
+            position = position + moveSpeed * Vector3.Down;
+            target = position + direction;
+        }
+
+        static private void rotateLeftRight()
+        {
+            yaw -= mouseMoved.X * rotationSpeed;
+        }
+
+        static private void rotateUpDown()
+        {
+            pitch -= mouseMoved.Y * rotationSpeed;
+        }
+
+
+        static private void strafeLeft(GameTime gameTime, float strafe)
+        {
+            strafe = strafe + moveSpeed * gameTime.ElapsedGameTime.Milliseconds;
+            position = position - moveSpeed * Vector3.Cross(direction, Vector3.Up);
+            target = position + direction;
+        }
+
+        static private void strafeRight(GameTime gameTime, float strafe)
+        {
+            strafe = strafe + moveSpeed * gameTime.ElapsedGameTime.Milliseconds;
+            position = position + moveSpeed * Vector3.Cross(direction, Vector3.Up);
+            target = position + direction;
+        }
+
+        static public void Update(GameTime gameTime, GraphicsDevice graphics)
+        {
+
+            float posicaoXAnterior = position.X;
+            float posicaoZAnterior = position.Z;
 
             //Controlos do teclado
-            Vector3 moveVector = new Vector3(0, 0, 0);
-            KeyboardState keyState = Keyboard.GetState();
-            if (keyState.IsKeyDown(Keys.Up) || keyState.IsKeyDown(Keys.W))
-                moveVector += new Vector3(0, 0, -1);
-            if (keyState.IsKeyDown(Keys.Down) || keyState.IsKeyDown(Keys.S))
-                moveVector += new Vector3(0, 0, 1);
-            if (keyState.IsKeyDown(Keys.Right) || keyState.IsKeyDown(Keys.D))
-                moveVector += new Vector3(1, 0, 0);
-            if (keyState.IsKeyDown(Keys.Left) || keyState.IsKeyDown(Keys.A))
-                moveVector += new Vector3(-1, 0, 0);
-            if (keyState.IsKeyDown(Keys.Q))
-                moveVector += new Vector3(0, 1, 0);
-            if (keyState.IsKeyDown(Keys.E))
-                moveVector += new Vector3(0, -1, 0);
-            if (keyState.IsKeyDown(Keys.O) && !keyStateAnterior.IsKeyDown(Keys.O))
+            KeyboardState kb = Keyboard.GetState();
+            if (kb.IsKeyDown(Keys.W))
+            {
+                Foward();
+            }
+            if (kb.IsKeyDown(Keys.S))
+            {
+                Backward();
+
+            }
+            if (kb.IsKeyDown(Keys.A))
+            {
+                strafeLeft(gameTime, moveSpeed / 2);
+
+            }
+            if (kb.IsKeyDown(Keys.D))
+            {
+                strafeRight(gameTime, moveSpeed / 2);
+            }
+            if (kb.IsKeyDown(Keys.Q))
+            {
+                Up();
+            }
+            if (kb.IsKeyDown(Keys.E))
+            {
+                Down();
+            }
+            if (kb.IsKeyDown(Keys.O) && !keyStateAnterior.IsKeyDown(Keys.O))
             {
                 if (graphics.RasterizerState == rasterizerStateSolid)
                 {
@@ -233,7 +236,7 @@ namespace Terreno
                     graphics.RasterizerState = rasterizerStateSolid;
                 }
             }
-            if (keyState.IsKeyDown(Keys.C) && !keyStateAnterior.IsKeyDown(Keys.C))
+            if (kb.IsKeyDown(Keys.C) && !keyStateAnterior.IsKeyDown(Keys.C))
             {
                 if (tipoCamera == TipoCamera.FPS)
                 {
@@ -244,48 +247,81 @@ namespace Terreno
                     tipoCamera = TipoCamera.FPS;
                 }
             }
-            if (keyState.IsKeyDown(Keys.N) && !keyStateAnterior.IsKeyDown(Keys.N))
+            if (kb.IsKeyDown(Keys.N) && !keyStateAnterior.IsKeyDown(Keys.N))
             {
                 drawNormals = !drawNormals;
             }
-            if (keyState.IsKeyDown(Keys.Add))
-            {
-                moveSpeed += 0.5f;
-            }
-            if (keyState.IsKeyDown(Keys.Subtract))
-            {
-                if(moveSpeed > 0.5f) moveSpeed -= 0.5f;
-            }
-               
-            AddToCameraPosition(moveVector * amount);
 
-            keyStateAnterior = keyState;
-            mouseStateAnterior = Mouse.GetState();
-        }
+            //Controlo da velocidade com a roda do rato
+            MouseState mouseState = Mouse.GetState();
 
-        /// <summary>
-        /// Atualiza a posição da camâra
-        /// </summary>
-        /// <param name="vectorToAdd"></param>
-        static private void AddToCameraPosition(Vector3 vectorToAdd)
-        {
-            Matrix cameraRotation = Matrix.CreateRotationX(updownRot) * Matrix.CreateRotationY(leftrightRot);
-            Vector3 rotatedVector = Vector3.Transform(vectorToAdd, cameraRotation);
-            position += moveSpeed * rotatedVector;
+            if (mouseState.ScrollWheelValue > mouseStateAnterior.ScrollWheelValue)
+            {
+                if(moveSpeed < 2f)
+                    moveSpeed += (mouseState.ScrollWheelValue - mouseStateAnterior.ScrollWheelValue) / 10000f;
+            }
+            if (Mouse.GetState().ScrollWheelValue < mouseStateAnterior.ScrollWheelValue)
+            {
+                if(moveSpeed > 0.05f)
+                    moveSpeed -= (mouseStateAnterior.ScrollWheelValue - mouseState.ScrollWheelValue) / 10000f;
+            }
+            Console.WriteLine(moveSpeed);
+
+            //Controlo da rotação com o rato
+            if (mouseState != mouseStateOriginal)
+            {
+                mouseMoved.X = mouseState.Position.X - mouseStateOriginal.Position.X;
+                mouseMoved.Y = mouseState.Position.Y - mouseStateOriginal.Position.Y;
+                rotateLeftRight();
+                rotateUpDown();
+                try
+                {
+                    Mouse.SetPosition(graphics.Viewport.Height / 2, graphics.Viewport.Width / 2);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+
+            }
+
+            
+
+            if (position.X - 1 < 0)
+            {
+                position.X = posicaoXAnterior;
+            }
+            if (position.Z - 1 < 0)
+            {
+                position.Z = posicaoZAnterior;
+            }
+            if (position.X + 1 > 127)
+            {
+                position.X = posicaoXAnterior;
+            }
+            if (position.Z + 1 > 127)
+            {
+                position.Z = posicaoZAnterior;
+            }
+
             UpdateViewMatrix();
+            mouseStateAnterior = mouseState;
+            keyStateAnterior = kb;
         }
 
-        /// <summary>
-        /// Atualiza os parâmetros da camâra
-        /// </summary>
-        /// <param name="gameTime">Instância de gameTime</param>
-        /// <param name="graphics">Instância de graphicsDevice</param>
-        static public void Update(GameTime gameTime, GraphicsDevice graphics)
+        static private void UpdateViewMatrix()
         {
-            float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
-            ProcessInput(timeDifference, graphics);
+
+            if (tipoCamera == TipoCamera.FPS)
+            {
+                position.Y = getAlturaFromHeightmap();
+            }
+
+            cameraRotation = Matrix.CreateFromYawPitchRoll(yaw, 0, pitch);
+            World = cameraRotation;
+            direction = Vector3.Transform(new Vector3(1, -0.5f, 0), cameraRotation);
+            target = position + direction;
+            View = Matrix.CreateLookAt(position, target, Vector3.Up);
         }
-
-
     }
 }
