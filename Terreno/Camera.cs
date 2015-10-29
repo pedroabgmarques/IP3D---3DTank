@@ -179,7 +179,7 @@ namespace Terreno
         static private void ProcessInput(float amount, GraphicsDevice graphics)
         {
             //Movimento do rato
-            MouseState currentMouseState = Mouse.GetState();3
+            MouseState currentMouseState = Mouse.GetState();
             if (currentMouseState != originalMouseState)
             {
                 float xDifference = currentMouseState.X - originalMouseState.X;
