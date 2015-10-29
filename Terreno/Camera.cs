@@ -63,7 +63,7 @@ namespace Terreno
             tipoCamera = TipoCamera.FPS;
 
             //Posição inicial da camâra
-            position = new Vector3(0, 0, 0);
+            position = new Vector3(10, 30, 20);
             //Inicializar as matrizes world, view e projection
             World = Matrix.Identity;
             UpdateViewMatrix();
