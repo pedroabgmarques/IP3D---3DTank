@@ -97,7 +97,7 @@ namespace Terreno
         {
             //Posição arredondada para baixo da camara
             int xCamera, zCamera;
-            xCamera = (int)position.Y;
+            xCamera = (int)position.X;
             zCamera = (int)position.Z;
             
             //Os 4 vértices que rodeiam a posição da camara
