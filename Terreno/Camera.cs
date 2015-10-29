@@ -11,7 +11,7 @@ namespace Terreno
 
     enum TipoCamera
     {
-        FPS,
+        FPS1,
         Free,
         thirdPerson
     }
