@@ -1,0 +1,179 @@
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using System;
+
+namespace Terreno
+{
+    /// <summary>
+    /// This is the main type for your game.
+    /// </summary>
+    public class Game1 : Game
+    {
+        GraphicsDeviceManager graphics;
+        BasicEffect efeito3DAxis, efeitoTerrain, efeitoWater, efeitoDeepWater;
+        Texture2D heightmap, terrainTexture, waterTexture;
+        float anguloLuz;
+        float stepAnguloLuz;
+        Random random;
+
+        public Game1()
+        {
+            graphics = new GraphicsDeviceManager(this);
+            graphics.GraphicsProfile = GraphicsProfile.HiDef;
+            graphics.PreferMultiSampling = true;
+            graphics.PreferredBackBufferWidth = 800;
+            graphics.PreferredBackBufferHeight = 600;
+            graphics.IsFullScreen = false;
+            graphics.SynchronizeWithVerticalRetrace = true;
+            Content.RootDirectory = "Content";
+        }
+
+        /// <summary>
+        /// Allows the game to perform any initialization it needs to before starting to run.
+        /// This is where it can query for any required services and load any non-graphic
+        /// related content.  Calling base.Initialize will enumerate through any components
+        /// and initialize them as well.
+        /// </summary>
+        protected override void Initialize()
+        {
+            random = new Random();
+
+            Create3DAxis.Initialize(GraphicsDevice);
+
+            DebugShapeRenderer.Initialize(GraphicsDevice);
+
+            base.Initialize();
+        }
+
+        /// <summary>
+        /// LoadContent will be called once per game and is the place to load
+        /// all of your content.
+        /// </summary>
+        protected override void LoadContent()
+        {
+            //Load assets
+            heightmap = Content.Load<Texture2D>("heightmap");
+            terrainTexture = Content.Load<Texture2D>("terrainTexture");
+            waterTexture = Content.Load<Texture2D>("water_texture");
+
+            //Generate terrain
+            Terrain.GenerateTerrain(GraphicsDevice, heightmap);
+
+            //Gerar água
+            Water.GenerateWater(GraphicsDevice, heightmap.Width);
+
+            //Inicializar a camara
+            Camera.Initialize(GraphicsDevice);
+
+            //Load shaders
+            efeito3DAxis = new BasicEffect(GraphicsDevice);
+            efeito3DAxis.VertexColorEnabled = true;
+
+            efeitoTerrain = new BasicEffect(GraphicsDevice);
+            efeitoTerrain.Texture = terrainTexture;
+            efeitoTerrain.TextureEnabled = true;
+            efeitoTerrain.PreferPerPixelLighting = true;
+            efeitoTerrain.LightingEnabled = true; // turn on the lighting subsystem.
+            efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(7, 5, 4);
+            efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
+            efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0, 0.025f, 0);
+            efeitoTerrain.AmbientLightColor = new Vector3(0.3f, 0.3f, 0.03f);
+            efeitoTerrain.EmissiveColor = new Vector3(0.8f, 0.8f, 0.4f);
+            efeitoTerrain.DirectionalLight0.Enabled = true;
+            efeitoTerrain.FogColor = new Color(0, 0, 15).ToVector3();
+            efeitoTerrain.FogEnabled = true;
+            efeitoTerrain.FogStart = Camera.nearPlane;
+            efeitoTerrain.FogEnd = heightmap.Width;
+
+            efeitoDeepWater = new BasicEffect(GraphicsDevice);
+            efeitoDeepWater.Texture = waterTexture;
+            efeitoDeepWater.TextureEnabled = true;
+            efeitoDeepWater.PreferPerPixelLighting = true;
+            efeitoDeepWater.LightingEnabled = true; // turn on the lighting subsystem.
+            efeitoDeepWater.DirectionalLight0.DiffuseColor = new Vector3(1f, 0.2f, 0.7f);
+            efeitoDeepWater.DirectionalLight0.Direction = new Vector3(0, 1, 0);
+            efeitoDeepWater.DirectionalLight0.SpecularColor = new Vector3(0, 0.025f, 0);
+            efeitoDeepWater.AmbientLightColor = new Vector3(0, 0, 0);
+            efeitoDeepWater.EmissiveColor = new Vector3(0, 0, 0);
+            efeitoDeepWater.DirectionalLight0.Enabled = true;
+            efeitoDeepWater.Alpha = 0.5f;
+            efeitoDeepWater.FogColor = new Color(0, 0, 15).ToVector3();
+            efeitoDeepWater.FogEnabled = true;
+            efeitoDeepWater.FogStart = Camera.nearPlane;
+            efeitoDeepWater.FogEnd = heightmap.Width;
+
+            efeitoWater = new BasicEffect(GraphicsDevice);
+            efeitoWater.Texture = waterTexture;
+            efeitoWater.TextureEnabled = true;
+            efeitoWater.PreferPerPixelLighting = true;
+            efeitoWater.LightingEnabled = true; // turn on the lighting subsystem.
+            efeitoWater.DirectionalLight0.DiffuseColor = new Vector3(0.5f, 0.125f, 0.35f);
+            efeitoWater.DirectionalLight0.Direction = new Vector3(0, 1, 0);
+            efeitoWater.DirectionalLight0.SpecularColor = new Vector3(0, 0.0125f, 0);
+            efeitoWater.AmbientLightColor = new Vector3(0f, 0f, 0f);
+            efeitoWater.EmissiveColor = new Vector3(0f, 0f, 0f);
+            efeitoWater.DirectionalLight0.Enabled = true;
+            efeitoWater.Alpha = 0.8f;
+            efeitoWater.FogColor = new Color(0, 0, 15).ToVector3();
+            efeitoWater.FogEnabled = true;
+            efeitoWater.FogStart = Camera.nearPlane;
+            efeitoWater.FogEnd = heightmap.Width;
+
+            anguloLuz = MathHelper.ToRadians(90);
+            stepAnguloLuz = MathHelper.TwoPi / (360 * 5);
+            //stepAnguloLuz = 0;
+        }
+
+        /// <summary>
+        /// UnloadContent will be called once per game and is the place to unload
+        /// game-specific content.
+        /// </summary>
+        protected override void UnloadContent()
+        {
+            // TODO: Unload any non ContentManager content here
+        }
+
+        /// <summary>
+        /// Allows the game to run logic such as updating the world,
+        /// checking for collisions, gathering input, and playing audio.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        protected override void Update(GameTime gameTime)
+        {
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+                Exit();
+
+            efeitoTerrain.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), -(float)Math.Sin(anguloLuz), 0);
+            efeitoWater.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), -(float)Math.Sin(anguloLuz), 0);
+            anguloLuz += stepAnguloLuz;
+            if (anguloLuz > MathHelper.ToRadians(245)) anguloLuz = MathHelper.ToRadians(-65);
+
+            Camera.Update(gameTime, GraphicsDevice);
+
+            base.Update(gameTime);
+        }
+
+        /// <summary>
+        /// This is called when the game should draw itself.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        protected override void Draw(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(new Color(0, 0, 15));
+
+            // TODO: Add your drawing code here
+            Create3DAxis.Draw(GraphicsDevice, efeito3DAxis);
+
+            Terrain.Draw(GraphicsDevice, efeitoTerrain);
+
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+
+            Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);
+
+            DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
+
+            base.Draw(gameTime);
+        }
+    }
+}
