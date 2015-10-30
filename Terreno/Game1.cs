@@ -79,7 +79,7 @@ namespace Terreno
             efeitoTerrain.Texture = terrainTexture;
             efeitoTerrain.TextureEnabled = true;
             efeitoTerrain.PreferPerPixelLighting = true;
-            efeitoTerrain.LightingEnabled = true; // turn on the lighting subsystem.
+            efeitoTerrain.LightingEnabled = true; // ativar a iluminação
             efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(7, 5, 4);
             efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
             efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0, 0.025f, 0);

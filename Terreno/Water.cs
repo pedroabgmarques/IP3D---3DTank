@@ -104,9 +104,11 @@ namespace Terreno
             // Commit the changes to basic effect so it knows you made modifications  
             efeito.CurrentTechnique.Passes[0].Apply();
 
+            //Desenhar
             for (int i = 0; i < width - 1; i++)
             {
-                graphics.DrawUserIndexedPrimitives(PrimitiveType.TriangleStrip, vertexes, i * width, width * 2, indexes, 0, width * 2 - 2);
+                graphics.DrawUserIndexedPrimitives(PrimitiveType.TriangleStrip, vertexes, i * width, 
+                    width * 2, indexes, 0, width * 2 - 2);
             }
 
             //Levantar todos os vértices
@@ -115,16 +117,11 @@ namespace Terreno
                 vertexes[i].Position.Y = vertexes[i].Position.Y + 0.21f;
             }
 
-            //Desenhar Novamente
-            efeitoDeepWater.World = Matrix.Identity; //* Matrix.CreateTranslation(new Vector3(- (float)(altura-1) / 2, -altura/6, - (float)(altura-1) / 2));
-            efeitoDeepWater.View = Camera.View;
-            efeitoDeepWater.Projection = Camera.Projection;
-
-            efeitoDeepWater.CurrentTechnique.Passes[0].Apply();
-
+            //Desenhar novamente
             for (int i = 0; i < width - 1; i++)
             {
-                graphics.DrawUserIndexedPrimitives(PrimitiveType.TriangleStrip, vertexes, i * width, width * 2, indexes, 0, width * 2 - 2);
+                graphics.DrawUserIndexedPrimitives(PrimitiveType.TriangleStrip, vertexes, i * width, 
+                    width * 2, indexes, 0, width * 2 - 2);
             }
 
             //Baixar todos os vértices

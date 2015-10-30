@@ -258,14 +258,15 @@ namespace Terreno
             if (mouseState.ScrollWheelValue > mouseStateAnterior.ScrollWheelValue)
             {
                 if(moveSpeed < 2f)
-                    moveSpeed += (mouseState.ScrollWheelValue - mouseStateAnterior.ScrollWheelValue) / 10000f;
+                    moveSpeed += (mouseState.ScrollWheelValue - mouseStateAnterior.ScrollWheelValue) 
+                        / 10000f;
             }
             if (Mouse.GetState().ScrollWheelValue < mouseStateAnterior.ScrollWheelValue)
             {
                 if(moveSpeed > 0.05f)
-                    moveSpeed -= (mouseStateAnterior.ScrollWheelValue - mouseState.ScrollWheelValue) / 10000f;
+                    moveSpeed -= (mouseStateAnterior.ScrollWheelValue - mouseState.ScrollWheelValue) 
+                        / 10000f;
             }
-            Console.WriteLine(moveSpeed);
 
             //Controlo da rotação com o rato
             if (mouseState != mouseStateOriginal)
@@ -286,7 +287,7 @@ namespace Terreno
             }
 
             
-
+            //Limitar a câmara aos limites do terreno
             if (position.X - 1 < 0)
             {
                 position.X = posicaoXAnterior;
@@ -295,11 +296,11 @@ namespace Terreno
             {
                 position.Z = posicaoZAnterior;
             }
-            if (position.X + 1 > 127)
+            if (position.X + 1 > Terrain.altura - 1)
             {
                 position.X = posicaoXAnterior;
             }
-            if (position.Z + 1 > 127)
+            if (position.Z + 1 > Terrain.altura - 1)
             {
                 position.Z = posicaoZAnterior;
             }

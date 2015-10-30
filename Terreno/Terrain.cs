@@ -10,8 +10,7 @@ namespace Terreno
     static class Terrain
     {
 
-        
-
+        //Array de vértices
         static public VertexPositionNormalTexture[] vertexes;
 
         //Array de índices
@@ -24,7 +23,7 @@ namespace Terreno
         static private VertexBuffer vertexBuffer;
         static private IndexBuffer indexBuffer;
 
-        //Altura do terreno
+        //Dimensões do terreno
         static public int altura;
 
         static public void GenerateTerrain(GraphicsDevice graphics, Texture2D heightmap)
@@ -53,8 +52,10 @@ namespace Terreno
                     //bigHeightmap (512 * 512): 0.2f;
                     //heightmap (128 * 128): 0.05f;
                     float scale = 0.05f;
-                    vertexes[(2 * j * altura) + i] = new VertexPositionNormalTexture(new Vector3(x, texels[(z * altura + x)].R * scale, z), Vector3.Zero, new Vector2(u, v));
-
+                    vertexes[(2 * j * altura) + i] = new VertexPositionNormalTexture(
+                        new Vector3(x, texels[(z * altura + x)].R * scale, z), 
+                        Vector3.Zero, 
+                        new Vector2(u, v));
                     z++;
                     if (z >= altura)
                     {
@@ -70,6 +71,7 @@ namespace Terreno
 
             //Gerar índices
             indexes = new int[(altura * 2) * (altura - 1)];
+
             for (int i = 0; i < indexes.Length / 2; i++)
             {
                 indexes[2 * i] = (int)i;
@@ -120,8 +122,10 @@ namespace Terreno
 
             }
 
-            
-            vertexBuffer = new VertexBuffer(graphics, typeof(VertexPositionNormalTexture), vertexes.Length, BufferUsage.WriteOnly);
+            //Passar informação para o GPU
+            vertexBuffer = new VertexBuffer(graphics, 
+                typeof(VertexPositionNormalTexture), vertexes.Length, 
+                BufferUsage.WriteOnly);
             vertexBuffer.SetData<VertexPositionNormalTexture>(vertexes);
             
             indexBuffer = new IndexBuffer(graphics, typeof(int), indexes.Length, BufferUsage.WriteOnly);
@@ -137,13 +141,14 @@ namespace Terreno
 
             //DEBUG
             //Desenhar normais
-            
             if (Camera.drawNormals)
             {
                 DebugShapeRenderer.SetWorld(efeito.World);
                 for (int i = 0; i < vertexes.Length; i++)
                 {
-                    DebugShapeRenderer.AddLine(vertexes[i].Position, vertexes[i].Position + vertexes[i].Normal, Color.Red);
+                    DebugShapeRenderer.AddLine(vertexes[i].Position, 
+                        vertexes[i].Position + vertexes[i].Normal, 
+                        Color.Red);
                 }
             }
             
@@ -153,7 +158,7 @@ namespace Terreno
             graphics.SetVertexBuffer(vertexBuffer);
             graphics.Indices = indexBuffer;
 
-            //Define os filtros desejados
+            //Ativa o anisotropic filtering
             SamplerState sampler = new SamplerState();
             sampler.Filter = TextureFilter.Anisotropic;
             sampler.MaxAnisotropy = 16;
@@ -162,9 +167,16 @@ namespace Terreno
             // Commit the changes to basic effect so it knows you made modifications  
             efeito.CurrentTechnique.Passes[0].Apply();
 
+            //Desenhar o terreno, uma strip de cada vez
             for (int i = 0; i < altura - 1; i++)
             {
-                graphics.DrawUserIndexedPrimitives(PrimitiveType.TriangleStrip, vertexes, i*altura, altura * 2, indexes, 0, altura*2 - 2);
+                graphics.DrawUserIndexedPrimitives(PrimitiveType.TriangleStrip, 
+                    vertexes, 
+                    i*altura, 
+                    altura * 2, 
+                    indexes, 
+                    0, 
+                    altura*2 - 2);
             }
                 
         }
