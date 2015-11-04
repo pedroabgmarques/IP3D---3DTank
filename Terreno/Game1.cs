@@ -24,8 +24,8 @@ namespace Terreno
             graphics = new GraphicsDeviceManager(this);
             graphics.GraphicsProfile = GraphicsProfile.HiDef;
             graphics.PreferMultiSampling = true;
-            graphics.PreferredBackBufferWidth = 800;
-            graphics.PreferredBackBufferHeight = 600;
+            graphics.PreferredBackBufferWidth = 1366;
+            graphics.PreferredBackBufferHeight = 768;
             graphics.IsFullScreen = false;
             graphics.SynchronizeWithVerticalRetrace = true;
             Content.RootDirectory = "Content";
@@ -80,10 +80,10 @@ namespace Terreno
             efeitoTerrain.TextureEnabled = true;
             efeitoTerrain.PreferPerPixelLighting = true;
             efeitoTerrain.LightingEnabled = true; // ativar a iluminação
-            efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(7, 5, 4);
+            efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(10, 8, 7);
             efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
-            efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0, 0.025f, 0);
-            efeitoTerrain.AmbientLightColor = new Vector3(0.8f, 0.8f, 0.8f);
+            efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0.2f, 0.2f, 0.2f);
+            efeitoTerrain.AmbientLightColor = new Vector3(2.5f, 2.5f, 2.5f);
             efeitoTerrain.EmissiveColor = new Vector3(0f, 0f, 0f);
             efeitoTerrain.DirectionalLight0.Enabled = true;
             efeitoTerrain.FogColor = new Color(0, 0, 15).ToVector3();
