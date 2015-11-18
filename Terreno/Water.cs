@@ -46,7 +46,7 @@ namespace Terreno
                     u = (x % 2 == 0) ? 0 : 1;
                     v = (z % 2 == 0) ? 0 : 1;
 
-                    vertexes[(2 * j * width) + i] = new VertexPositionNormalTexture(new Vector3(x * 4, 3.5001f, z * 4), Vector3.Up, new Vector2(u, v));
+                    vertexes[(2 * j * width) + i] = new VertexPositionNormalTexture(new Vector3(x * 4, 2.0001f, z * 4), Vector3.Up, new Vector2(u, v));
 
                     z++;
                     if (z >= width)

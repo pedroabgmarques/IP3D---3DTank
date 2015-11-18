@@ -1,0 +1,11 @@
+Rotação do tanque
+
+- ir buscar o normal naquele ponto e interpolar as normais dos vértices
+	yab = ya.db + yb.da -> nab = na.db + nb.da
+- este cálculo dá a normal do sítio onde está o tanque
+- é necessário criar uma matriz de rotação para o world do tanque que rode o tanque de forma a que o vetor UP do tanque coincida com a normal do terreno
+- podemos criar a matriz com o UP, Forward e Right
+- o vector UP é a normal interpolada que calculámos
+- Cross do UP/normal pela Direção (Frente1) dá o Right/Left
+- Cross do Right/Left pelo Up/Normal dá o Forward (frente2)
+- Definir a matrix de rotação com Matrix.CreateWorld()

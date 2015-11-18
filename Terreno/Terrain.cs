@@ -35,7 +35,6 @@ namespace Terreno
 
             altura = heightmap.Height;
             vertexes = new VertexPositionNormalTexture[altura * altura];
-            
 
             //Gerar vértices
             int x = 0, z = 0;
@@ -51,7 +50,7 @@ namespace Terreno
                     //Escalas:
                     //bigHeightmap (512 * 512): 0.2f;
                     //heightmap (128 * 128): 0.05f;
-                    float scale = 0.05f;
+                    float scale = 0.035f;
                     vertexes[(2 * j * altura) + i] = new VertexPositionNormalTexture(
                         new Vector3(x, texels[(z * altura + x)].R * scale, z), 
                         Vector3.Zero, 
@@ -68,7 +67,6 @@ namespace Terreno
                 
             }
 
-
             //Gerar índices
             indexes = new int[(altura * 2) * (altura - 1)];
 
@@ -78,6 +76,22 @@ namespace Terreno
                 indexes[2 * i + 1] = (int)(i + altura);
             }
 
+            //Calcular normais
+            CalcularNormaisFoleiros();
+
+            //Passar informação para o GPU
+            vertexBuffer = new VertexBuffer(graphics, 
+                typeof(VertexPositionNormalTexture), vertexes.Length, 
+                BufferUsage.WriteOnly);
+            vertexBuffer.SetData<VertexPositionNormalTexture>(vertexes);
+            
+            indexBuffer = new IndexBuffer(graphics, typeof(int), indexes.Length, BufferUsage.WriteOnly);
+            indexBuffer.SetData<int>(indexes);
+        }
+
+        //É necessário fazer outro método que percorra o array de vértices e seja mais eficiente
+        static private void CalcularNormaisFoleiros()
+        {
             //Gerar normals
             //Código desenvolvido a partir do livro "XNA 3.0 Game Programming Recipes"
             for (int i = 2; i < indexes.Length; i++)
@@ -121,15 +135,6 @@ namespace Terreno
                 if (vertexes[i].Normal.Y < 0) vertexes[i].Normal.Y = -vertexes[i].Normal.Y;
 
             }
-
-            //Passar informação para o GPU
-            vertexBuffer = new VertexBuffer(graphics, 
-                typeof(VertexPositionNormalTexture), vertexes.Length, 
-                BufferUsage.WriteOnly);
-            vertexBuffer.SetData<VertexPositionNormalTexture>(vertexes);
-            
-            indexBuffer = new IndexBuffer(graphics, typeof(int), indexes.Length, BufferUsage.WriteOnly);
-            indexBuffer.SetData<int>(indexes);
         }
 
         static public void Draw(GraphicsDevice graphics, BasicEffect efeito)

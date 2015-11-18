@@ -11,8 +11,9 @@ namespace Terreno
 
     enum TipoCamera
     {
-        FPS,
-        Free
+        SurfaceFollow,
+        Free,
+        ThirdPerson
     }
 
     static class Camera
@@ -71,7 +72,7 @@ namespace Terreno
 
         static public void Initialize(GraphicsDevice graphics)
         {
-            tipoCamera = TipoCamera.FPS;
+            tipoCamera = TipoCamera.ThirdPerson;
 
             farPlane = Terrain.altura + (Terrain.altura / 2);
 
@@ -90,7 +91,7 @@ namespace Terreno
             //Inicializar as matrizes world, view e projection
             World = Matrix.Identity;
             Foward();
-            UpdateViewMatrix();
+            //UpdateViewMatrix();
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
                 graphics.Viewport.AspectRatio,
                 nearPlane,
@@ -112,19 +113,19 @@ namespace Terreno
             rasterizerStateWireFrame.FillMode = FillMode.WireFrame;         
         }
 
-        static private float getAlturaFromHeightmap()
+        static private float getAlturaFromHeightmap(Vector3 posicao)
         {
-            //Posição arredondada para baixo da camara
-            int xCamera, zCamera;
-            xCamera = (int)position.X;
-            zCamera = (int)position.Z;
+            //Posição arredondada para baixo
+            int xPos, zPos;
+            xPos = (int)posicao.X;
+            zPos = (int)posicao.Z;
 
             //Os 4 vértices que rodeiam a posição da camara
             Vector2 pontoA, pontoB, pontoC, pontoD;
-            pontoA = new Vector2(xCamera, zCamera);
-            pontoB = new Vector2(xCamera + 1, zCamera);
-            pontoC = new Vector2(xCamera, zCamera + 1);
-            pontoD = new Vector2(xCamera + 1, zCamera + 1);
+            pontoA = new Vector2(xPos, zPos);
+            pontoB = new Vector2(xPos + 1, zPos);
+            pontoC = new Vector2(xPos, zPos + 1);
+            pontoD = new Vector2(xPos + 1, zPos + 1);
 
             //Recolher a altura de cada um dos 4 vértices à volta da câmara a partir do heightmap
             float Ya, Yb, Yc, Yd;
@@ -134,12 +135,12 @@ namespace Terreno
             Yd = Terrain.vertexes[(int)pontoD.X * Terrain.altura + (int)pontoD.Y].Position.Y;
 
             //Interpolação bilenear (dada nas aulas)
-            float Yab = (1 - (position.X - pontoA.X)) * Ya + (position.X - pontoA.X) * Yb;
-            float Ycd = (1 - (position.X - pontoC.X)) * Yc + (position.X - pontoC.X) * Yd;
-            float Y = (1 - (position.Z - pontoA.Y)) * Yab + (position.Z - pontoA.Y) * Ycd;
+            float Yab = (1 - (posicao.X - pontoA.X)) * Ya + (posicao.X - pontoA.X) * Yb;
+            float Ycd = (1 - (posicao.X - pontoC.X)) * Yc + (posicao.X - pontoC.X) * Yd;
+            float Y = (1 - (posicao.Z - pontoA.Y)) * Yab + (posicao.Z - pontoA.Y) * Ycd;
 
-            //Devolver a altura + um offset
-            return Y + 1;
+            //Devolver a altura
+            return Y;
         }
 
         static private void Foward()
@@ -191,40 +192,77 @@ namespace Terreno
             target = position + direction;
         }
 
-        static public void Update(GameTime gameTime, GraphicsDevice graphics)
+        static public void Update(GameTime gameTime, GraphicsDevice graphics, Tank tank)
         {
 
             float posicaoXAnterior = position.X;
             float posicaoZAnterior = position.Z;
 
-            //Controlos do teclado
             KeyboardState kb = Keyboard.GetState();
-            if (kb.IsKeyDown(Keys.W))
-            {
-                Foward();
-            }
-            if (kb.IsKeyDown(Keys.S))
-            {
-                Backward();
+            MouseState mouseState = Mouse.GetState();
 
-            }
-            if (kb.IsKeyDown(Keys.A))
+            if (tipoCamera == TipoCamera.SurfaceFollow || tipoCamera == TipoCamera.Free)
             {
-                strafeLeft(gameTime, moveSpeed / 2);
+                //Controlos do teclado
+                if (kb.IsKeyDown(Keys.W))
+                {
+                    Foward();
+                }
+                if (kb.IsKeyDown(Keys.S))
+                {
+                    Backward();
 
+                }
+                if (kb.IsKeyDown(Keys.A))
+                {
+                    strafeLeft(gameTime, moveSpeed / 2);
+
+                }
+                if (kb.IsKeyDown(Keys.D))
+                {
+                    strafeRight(gameTime, moveSpeed / 2);
+                }
+                if (kb.IsKeyDown(Keys.Q))
+                {
+                    Up();
+                }
+                if (kb.IsKeyDown(Keys.E))
+                {
+                    Down();
+                }
+
+                if (mouseState.ScrollWheelValue > mouseStateAnterior.ScrollWheelValue)
+                {
+                    if (moveSpeed < 2f)
+                        moveSpeed += (mouseState.ScrollWheelValue - mouseStateAnterior.ScrollWheelValue)
+                            / 10000f;
+                }
+                if (Mouse.GetState().ScrollWheelValue < mouseStateAnterior.ScrollWheelValue)
+                {
+                    if (moveSpeed > 0.05f)
+                        moveSpeed -= (mouseStateAnterior.ScrollWheelValue - mouseState.ScrollWheelValue)
+                            / 10000f;
+                }
+
+                //Controlo da rotação com o rato
+                if (mouseState != mouseStateOriginal)
+                {
+                    mouseMoved.X = mouseState.Position.X - mouseStateOriginal.Position.X;
+                    mouseMoved.Y = mouseState.Position.Y - mouseStateOriginal.Position.Y;
+                    rotateLeftRight();
+                    rotateUpDown();
+                    try
+                    {
+                        Mouse.SetPosition(graphics.Viewport.Height / 2, graphics.Viewport.Width / 2);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
+                }
             }
-            if (kb.IsKeyDown(Keys.D))
-            {
-                strafeRight(gameTime, moveSpeed / 2);
-            }
-            if (kb.IsKeyDown(Keys.Q))
-            {
-                Up();
-            }
-            if (kb.IsKeyDown(Keys.E))
-            {
-                Down();
-            }
+            
             if (kb.IsKeyDown(Keys.O) && !keyStateAnterior.IsKeyDown(Keys.O))
             {
                 if (graphics.RasterizerState == rasterizerStateSolid)
@@ -238,54 +276,27 @@ namespace Terreno
             }
             if (kb.IsKeyDown(Keys.C) && !keyStateAnterior.IsKeyDown(Keys.C))
             {
-                if (tipoCamera == TipoCamera.FPS)
+                switch (tipoCamera)
                 {
-                    tipoCamera = TipoCamera.Free;
+                    case TipoCamera.SurfaceFollow:
+                        tipoCamera = TipoCamera.Free;
+                        break;
+                    case TipoCamera.Free:
+                        tipoCamera = TipoCamera.ThirdPerson;
+                        break;
+                    case TipoCamera.ThirdPerson:
+                        tipoCamera = TipoCamera.SurfaceFollow;
+                        break;
+                    default:
+                        tipoCamera = TipoCamera.Free;
+                        break;
                 }
-                else
-                {
-                    tipoCamera = TipoCamera.FPS;
-                }
+                
             }
             if (kb.IsKeyDown(Keys.N) && !keyStateAnterior.IsKeyDown(Keys.N))
             {
                 drawNormals = !drawNormals;
             }
-
-            //Controlo da velocidade com a roda do rato
-            MouseState mouseState = Mouse.GetState();
-
-            if (mouseState.ScrollWheelValue > mouseStateAnterior.ScrollWheelValue)
-            {
-                if(moveSpeed < 2f)
-                    moveSpeed += (mouseState.ScrollWheelValue - mouseStateAnterior.ScrollWheelValue) 
-                        / 10000f;
-            }
-            if (Mouse.GetState().ScrollWheelValue < mouseStateAnterior.ScrollWheelValue)
-            {
-                if(moveSpeed > 0.05f)
-                    moveSpeed -= (mouseStateAnterior.ScrollWheelValue - mouseState.ScrollWheelValue) 
-                        / 10000f;
-            }
-
-            //Controlo da rotação com o rato
-            if (mouseState != mouseStateOriginal)
-            {
-                mouseMoved.X = mouseState.Position.X - mouseStateOriginal.Position.X;
-                mouseMoved.Y = mouseState.Position.Y - mouseStateOriginal.Position.Y;
-                rotateLeftRight();
-                rotateUpDown();
-                try
-                {
-                    Mouse.SetPosition(graphics.Viewport.Height / 2, graphics.Viewport.Width / 2);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-
-            }
-
             
             //Limitar a câmara aos limites do terreno
             if (position.X - 1 < 0)
@@ -305,24 +316,64 @@ namespace Terreno
                 position.Z = posicaoZAnterior;
             }
 
-            UpdateViewMatrix();
+            UpdateViewMatrix(tank);
             mouseStateAnterior = mouseState;
             keyStateAnterior = kb;
         }
 
-        static private void UpdateViewMatrix()
+        static private void UpdateViewMatrix(Tank tank = null)
         {
 
-            if (tipoCamera == TipoCamera.FPS)
+            if (tipoCamera == TipoCamera.SurfaceFollow)
             {
-                position.Y = getAlturaFromHeightmap();
+                position.Y = getAlturaFromHeightmap(position) + 1;
             }
 
-            cameraRotation = Matrix.CreateFromYawPitchRoll(yaw, 0, pitch);
-            World = cameraRotation;
-            direction = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
-            target = position + direction;
-            View = Matrix.CreateLookAt(position, target, Vector3.Up);
+            if (tipoCamera == TipoCamera.SurfaceFollow || tipoCamera == TipoCamera.Free)
+            {
+                cameraRotation = Matrix.CreateFromYawPitchRoll(yaw, 0, pitch);
+                World = cameraRotation;
+                direction = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
+                target = position + direction;
+                View = Matrix.CreateLookAt(position, target, Vector3.Up);
+            }
+
+            if (tipoCamera == TipoCamera.ThirdPerson)
+            {
+
+                Matrix rotationMatrix = Matrix.CreateRotationX(-tank.CannonRotation)
+                    * Matrix.CreateRotationY(tank.TurretRotation)
+                    * Matrix.CreateRotationY(MathHelper.ToRadians(tank.rotacaoY))
+                    ;
+
+                Vector3 thirdPersonReference = new Vector3(0, 4f, 6f);
+
+                Vector3 transformedReference =
+                    Vector3.Transform(thirdPersonReference, rotationMatrix);
+
+                Vector3 cameraPosition = transformedReference + tank.position;
+
+                float alturaTerrenoPosicaoCam = getAlturaFromHeightmap(cameraPosition);
+
+                if (cameraPosition.Y < alturaTerrenoPosicaoCam + 0.5f)
+                {
+                    cameraPosition.Y = alturaTerrenoPosicaoCam + 0.5f;
+                }
+
+                View = Matrix.CreateLookAt(cameraPosition, tank.position,
+                    Vector3.Up);
+
+                position = cameraPosition;
+                direction = tank.position - position;
+
+                /*
+                cameraRotation = tank.rotacao;
+                position = tank.position + new Vector3(0, 0.5f, 2);
+                target = tank.position;
+                View = Matrix.CreateLookAt(position, target, Vector3.Up);
+                */
+            }
+            
         }
     }
 }

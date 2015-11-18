@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 
 namespace Terreno
 {
@@ -18,6 +19,9 @@ namespace Terreno
         Random random;
         SpriteFont spriteFont;
         SpriteBatch spriteBatch;
+        List<Tank> listaTanques;
+        Tank tankPlayer1;
+        KeyboardState kbAnterior;
 
         public Game1()
         {
@@ -26,7 +30,7 @@ namespace Terreno
             graphics.PreferMultiSampling = true;
             graphics.PreferredBackBufferWidth = 1366;
             graphics.PreferredBackBufferHeight = 768;
-            graphics.IsFullScreen = false;
+            graphics.IsFullScreen = true;
             graphics.SynchronizeWithVerticalRetrace = true;
             Content.RootDirectory = "Content";
         }
@@ -44,6 +48,8 @@ namespace Terreno
             Create3DAxis.Initialize(GraphicsDevice);
 
             DebugShapeRenderer.Initialize(GraphicsDevice);
+
+            listaTanques = new List<Tank>();
 
             base.Initialize();
         }
@@ -67,6 +73,17 @@ namespace Terreno
 
             //Gerar água
             Water.GenerateWater(GraphicsDevice, heightmap.Width);
+
+            for (int i = 0; i < 80; i++)
+            {
+                Tank tank = new Tank(GraphicsDevice, new Vector3(random.Next(1, Terrain.altura - 1), 5, random.Next(1, Terrain.altura - 1)), random);
+                tank.LoadContent(Content);
+                listaTanques.Add(tank);
+            }
+
+            tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 50), random);
+            tankPlayer1.ativarTanque();
+            tankPlayer1.LoadContent(Content);
 
             //Inicializar a camara
             Camera.Initialize(GraphicsDevice);
@@ -149,12 +166,28 @@ namespace Terreno
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            if (Keyboard.GetState().IsKeyDown(Keys.P) && !kbAnterior.IsKeyDown(Keys.P))
+            {
+                tankPlayer1.desativarTanque();
+                tankPlayer1 = listaTanques[random.Next(0, listaTanques.Count)];
+                tankPlayer1.ativarTanque();
+            }
+
+            kbAnterior = Keyboard.GetState();
+
             efeitoTerrain.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), -(float)Math.Sin(anguloLuz), 0);
             efeitoWater.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), -(float)Math.Sin(anguloLuz), 0);
             anguloLuz += stepAnguloLuz;
             if (anguloLuz > MathHelper.ToRadians(245)) anguloLuz = MathHelper.ToRadians(-65);
 
-            Camera.Update(gameTime, GraphicsDevice);
+            foreach (Tank tank in listaTanques)
+            {
+                tank.Update(gameTime, tankPlayer1);
+            }
+
+            tankPlayer1.Update(gameTime, tankPlayer1);
+
+            Camera.Update(gameTime, GraphicsDevice, tankPlayer1);
 
             base.Update(gameTime);
         }
@@ -172,9 +205,20 @@ namespace Terreno
 
             Terrain.Draw(GraphicsDevice, efeitoTerrain);
 
+            GraphicsDevice.BlendState = BlendState.Opaque;
+
+            foreach (Tank tank in listaTanques)
+            {
+                tank.Draw(efeitoTerrain);
+            }
+
+            tankPlayer1.Draw(efeitoTerrain);
+
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
 
             Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);
+
+            
 
             DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
 
