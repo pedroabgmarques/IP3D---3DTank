@@ -82,8 +82,8 @@ namespace Terreno
             }
 
             tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 50), random);
-            tankPlayer1.ativarTanque();
             tankPlayer1.LoadContent(Content);
+            tankPlayer1.ativarTanque();
 
             //Inicializar a camara
             Camera.Initialize(GraphicsDevice);

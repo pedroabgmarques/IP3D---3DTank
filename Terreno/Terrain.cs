@@ -77,7 +77,7 @@ namespace Terreno
             }
 
             //Calcular normais
-            CalcularNormaisFoleiros();
+            CalcularNormais();
 
             //Passar informação para o GPU
             vertexBuffer = new VertexBuffer(graphics, 
@@ -90,7 +90,7 @@ namespace Terreno
         }
 
         //É necessário fazer outro método que percorra o array de vértices e seja mais eficiente
-        static private void CalcularNormaisFoleiros()
+        static private void CalcularNormais()
         {
             //Cria as normais do interior do terreno
             for (int i = altura + 1; i < vertexes.Count() - altura - 2; i++)
@@ -123,10 +123,6 @@ namespace Terreno
                 Vector3 vt6 = v7 - v1;
                 Vector3 vt7 = v8 - v1;
                 Vector3 vt8 = v9 - v1;
-
-
-
-
 
                 Vector3 normal = Vector3.Cross(vt2, vt1);
                 normal.Normalize();

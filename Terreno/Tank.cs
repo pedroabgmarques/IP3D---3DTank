@@ -197,7 +197,7 @@ namespace Terreno
             {
 
                 //Surface follow
-                position.Y = getAlturaFromHeightmap() - 0.02f;
+                position.Y = getAlturaFromHeightmap();
 
                 Vector3 vetorDirecao = (player.position + positionOffset) - position;
                 Vector3 eixoRotacao = Vector3.Cross(vetorBase, vetorDirecao);
@@ -342,7 +342,7 @@ namespace Terreno
             }
 
             //Surface follow
-            position.Y = getAlturaFromHeightmap() - 0.02f;
+            position.Y = getAlturaFromHeightmap();
 
             rotacao = Matrix.CreateRotationY(MathHelper.ToRadians(180)) * Matrix.CreateRotationY(MathHelper.ToRadians(rotacaoY));
             direcao = Vector3.Transform(vetorBase, rotacao);
