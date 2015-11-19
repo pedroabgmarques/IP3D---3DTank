@@ -21,13 +21,14 @@ namespace Terreno
         private GraphicsDevice device;
 
         Vector3 vetorBase;
-        public Vector3 direcao, target, position;
+        public Vector3 direcao, direcaoAnterior, target, position;
         public Matrix rotacao;
-        float velocidade;
         public float rotacaoY;
         public float scale;
+        float velocidade;
         private bool tanqueAtivo;
         private Vector3 positionOffset;
+        private List<Tank> vizinhanca;
 
         public void ativarTanque()
         {
@@ -37,6 +38,11 @@ namespace Terreno
         public void desativarTanque()
         {
             this.tanqueAtivo = false;
+        }
+
+        public bool isAtivo()
+        {
+            return this.tanqueAtivo;
         }
 
 
@@ -129,8 +135,10 @@ namespace Terreno
 
         public Tank(GraphicsDevice graphicsDevice, Vector3 position, Random random)
         {
+            vizinhanca = new List<Tank>();
             vetorBase = new Vector3(0, 0, 1);
             direcao = vetorBase;
+            direcaoAnterior = vetorBase;
             this.position = position;
             target = position + direcao;
             rotacaoY = 0;
@@ -187,7 +195,7 @@ namespace Terreno
 
         }
 
-        public void Update(GameTime gameTime, Tank player)
+        public void Update(GameTime gameTime, List<Tank> listaTanques, Tank player)
         {
             if (tanqueAtivo)
             {
@@ -199,22 +207,42 @@ namespace Terreno
                 //Surface follow
                 position.Y = getAlturaFromHeightmap();
 
-                Vector3 vetorDirecao = (player.position + positionOffset) - position;
-                Vector3 eixoRotacao = Vector3.Cross(vetorBase, vetorDirecao);
-                float angulo = (float)Math.Acos(Vector3.Dot(vetorBase, vetorDirecao) / vetorBase.Length() / vetorDirecao.Length());
+                //AI
+                float maxDistanciaVizinhanca = 20;
+                vizinhanca = listaTanques.FindAll(x => Vector3.Distance(x.position, this.position) < maxDistanciaVizinhanca);
 
-                rotacao = Matrix.CreateFromAxisAngle(eixoRotacao, angulo);
-                direcao = Vector3.Transform(vetorBase, rotacao);
+                Vector3 centroMassa = AI.centroMassaBoids(listaTanques, this);
+                Vector3 manterDistancia = AI.manterDistancia(vizinhanca, this, 3f);
+                Vector3 combinarDirecao = AI.combinarDirecao(vizinhanca, this);
+                Vector3 moverParaDirecao = AI.moverParaDirecao(this, player.position);
+
+                direcao += manterDistancia + moverParaDirecao; //+ combinardirecao + centroMassa;
+                direcao = Vector3.Lerp(direcaoAnterior, direcao, 0.01f);
+
+                if ((direcao - direcaoAnterior).Length() > 0.005f)
+                {
+                    direcao.Normalize();
+                    position += direcao * velocidade;
+
+                    this.wheelBackLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+                    this.wheelBackRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+                    this.wheelFrontLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+                    this.wheelFrontRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+                }
+                else
+                {
+                    direcao = direcaoAnterior;
+                }
 
                 Vector3 Up = getNormalFromHeightmap();
                 Vector3 Right = Vector3.Cross(Up, direcao);
                 Vector3 Frente = Vector3.Cross(Up, Right);
 
-                position += Vector3.Normalize(direcao) * velocidade;
-
                 this.world = Matrix.CreateWorld(position, Frente, Up)
-                    * Matrix.CreateScale(scale)
-                    * Matrix.CreateTranslation(position);
+                        * Matrix.CreateScale(scale)
+                        * Matrix.CreateTranslation(position);
+
+                direcaoAnterior = direcao;
             }
         }
 
@@ -370,7 +398,7 @@ namespace Terreno
             pontoC = new Vector2(xTank, zTank + 1);
             pontoD = new Vector2(xTank + 1, zTank + 1);
 
-            //Recolher a altura de cada um dos 4 vértices à volta da câmara a partir do heightmap
+            //Recolher a altura de cada um dos 4 vértices à volta do tanque a partir do heightmap
             float Ya, Yb, Yc, Yd;
             Ya = Terrain.vertexes[(int)pontoA.X * Terrain.altura + (int)pontoA.Y].Position.Y;
             Yb = Terrain.vertexes[(int)pontoB.X * Terrain.altura + (int)pontoB.Y].Position.Y;

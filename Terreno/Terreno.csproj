@@ -38,6 +38,7 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AI.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="Create3DAxis.cs" />
     <Compile Include="DebugShapeRenderer.cs" />

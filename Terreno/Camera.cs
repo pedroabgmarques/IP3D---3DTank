@@ -346,7 +346,7 @@ namespace Terreno
                     * Matrix.CreateRotationY(MathHelper.ToRadians(tank.rotacaoY))
                     ;
 
-                Vector3 thirdPersonReference = new Vector3(0, 4f, 6f);
+                Vector3 thirdPersonReference = new Vector3(0, 5f, 8f);
 
                 Vector3 transformedReference =
                     Vector3.Transform(thirdPersonReference, rotationMatrix);

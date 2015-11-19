@@ -74,9 +74,9 @@ namespace Terreno
             //Gerar água
             Water.GenerateWater(GraphicsDevice, heightmap.Width);
 
-            for (int i = 0; i < 80; i++)
+            for (int i = 0; i < 30; i++)
             {
-                Tank tank = new Tank(GraphicsDevice, new Vector3(random.Next(1, Terrain.altura - 1), 5, random.Next(1, Terrain.altura - 1)), random);
+                Tank tank = new Tank(GraphicsDevice, new Vector3(random.Next(10, Terrain.altura - 10), 50, random.Next(10, Terrain.altura - 10)), random);
                 tank.LoadContent(Content);
                 listaTanques.Add(tank);
             }
@@ -84,6 +84,7 @@ namespace Terreno
             tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 50), random);
             tankPlayer1.LoadContent(Content);
             tankPlayer1.ativarTanque();
+            listaTanques.Add(tankPlayer1);
 
             //Inicializar a camara
             Camera.Initialize(GraphicsDevice);
@@ -182,10 +183,8 @@ namespace Terreno
 
             foreach (Tank tank in listaTanques)
             {
-                tank.Update(gameTime, tankPlayer1);
+                tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()));
             }
-
-            tankPlayer1.Update(gameTime, tankPlayer1);
 
             Camera.Update(gameTime, GraphicsDevice, tankPlayer1);
 
@@ -211,8 +210,6 @@ namespace Terreno
             {
                 tank.Draw(efeitoTerrain);
             }
-
-            tankPlayer1.Draw(efeitoTerrain);
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
 
