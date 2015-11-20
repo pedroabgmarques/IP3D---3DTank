@@ -49,8 +49,8 @@ namespace Terreno
 
                     //Escalas:
                     //bigaltura (512 * 512): 0.2f;
-                    //altura (128 * 128): 0.05f;
-                    float scale = 0.035f;
+                    //altura (128 * 128): 0.035f;
+                    float scale = 0.04f;
                     vertexes[(2 * j * altura) + i] = new VertexPositionNormalTexture(
                         new Vector3(x, texels[(z * altura + x)].R * scale, z), 
                         Vector3.Zero, 
@@ -89,11 +89,10 @@ namespace Terreno
             indexBuffer.SetData<int>(indexes);
         }
 
-        //É necessário fazer outro método que percorra o array de vértices e seja mais eficiente
         static private void CalcularNormais()
         {
             //Cria as normais do interior do terreno
-            for (int i = altura + 1; i < vertexes.Count() - altura - 2; i++)
+            for (int i = altura + 1; i < vertexes.Count() - altura - 1; i++)
             {
                 Vector3 v1 = Vector3.Zero;
                 Vector3 v2 = Vector3.Zero;
@@ -291,7 +290,7 @@ namespace Terreno
 
 
 
-            //Cria a normal do vértice superior esquerdo(vertexes[0])
+            //Cria a normal do vértice superior esquerdo
             for (int i = 0; i < 1; i++)
             {
                 Vector3 v1 = Vector3.Zero;
@@ -319,10 +318,7 @@ namespace Terreno
 
             }
 
-
-
-
-            //Cria a normal do vértice superior direito ( vertexes[599])
+            //Cria a normal do vértice superior direito
             for (int i = altura - 1; i < altura; i++)
             {
                 Vector3 v1 = Vector3.Zero;
@@ -350,8 +346,7 @@ namespace Terreno
 
             }
 
-
-            //Cria a normal do vértice inferior esquerdo (vertexes[359400])
+            //Cria a normal do vértice inferior esquerdo
             for (int i = vertexes.Count() - altura; i < vertexes.Count() - altura + 1; i++)
             {
                 Vector3 v1 = Vector3.Zero;
@@ -379,7 +374,7 @@ namespace Terreno
 
             }
 
-            //Cria a normal do vértice inferior direito (vertexes[359999])
+            //Cria a normal do vértice inferior direito
             for (int i = vertexes.Count() - 1; i < vertexes.Count(); i++)
             {
                 Vector3 v1 = Vector3.Zero;
@@ -415,11 +410,14 @@ namespace Terreno
             efeito.View = Camera.View;
             efeito.Projection = Camera.Projection;
 
+            DebugShapeRenderer.SetWorld(efeito.World);
+
             //DEBUG
             //Desenhar normais
+            
+            /*
             if (Camera.drawNormals)
             {
-                DebugShapeRenderer.SetWorld(efeito.World);
                 for (int i = 0; i < vertexes.Length; i++)
                 {
                     DebugShapeRenderer.AddLine(vertexes[i].Position, 
@@ -427,7 +425,7 @@ namespace Terreno
                         Color.Red);
                 }
             }
-            
+            */
             
 
             //Definir os buffers a utilizar

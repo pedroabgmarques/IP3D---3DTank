@@ -47,9 +47,10 @@ namespace Terreno
                     }
                 }
             }
-            return distancia;
+            return distancia * 1.5f;
         }
 
+        //Faz com que andem juntinhos mais ou menos no mesmo sentido
         static public Vector3 combinarDirecao(List<Tank> lista, Tank tank)
         {
             Vector3 direcao = Vector3.Zero;
@@ -71,6 +72,7 @@ namespace Terreno
             return (direcao - tank.direcao) / 64;
         }
 
+        //Dirigir-se para uma determinada posição
         public static Vector3 moverParaDirecao(Tank tank, Vector3 posicao)
         {
             return (posicao - tank.position) / 20;

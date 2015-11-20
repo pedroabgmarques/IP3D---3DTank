@@ -22,6 +22,8 @@ namespace Terreno
         List<Tank> listaTanques;
         Tank tankPlayer1;
         KeyboardState kbAnterior;
+        List<Bala> listaBalas;
+        List<Bala> listaBalasRemover;
 
         public Game1()
         {
@@ -51,6 +53,10 @@ namespace Terreno
 
             listaTanques = new List<Tank>();
 
+            listaBalas = new List<Bala>();
+
+            listaBalasRemover = new List<Bala>();
+
             base.Initialize();
         }
 
@@ -74,14 +80,14 @@ namespace Terreno
             //Gerar água
             Water.GenerateWater(GraphicsDevice, heightmap.Width);
 
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 50; i++)
             {
-                Tank tank = new Tank(GraphicsDevice, new Vector3(random.Next(10, Terrain.altura - 10), 50, random.Next(10, Terrain.altura - 10)), random);
+                Tank tank = new Tank(GraphicsDevice, new Vector3(random.Next(10, Terrain.altura - 10), 50, random.Next(10, Terrain.altura - 10)));
                 tank.LoadContent(Content);
                 listaTanques.Add(tank);
             }
 
-            tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 50), random);
+            tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 50));
             tankPlayer1.LoadContent(Content);
             tankPlayer1.ativarTanque();
             listaTanques.Add(tankPlayer1);
@@ -176,15 +182,34 @@ namespace Terreno
 
             kbAnterior = Keyboard.GetState();
 
-            efeitoTerrain.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), -(float)Math.Sin(anguloLuz), 0);
-            efeitoWater.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), -(float)Math.Sin(anguloLuz), 0);
+            efeitoTerrain.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), 
+                                                        -(float)Math.Sin(anguloLuz), 0);
+            efeitoWater.DirectionalLight0.Direction = new Vector3((float)Math.Cos(anguloLuz), 
+                                                        -(float)Math.Sin(anguloLuz), 0);
             anguloLuz += stepAnguloLuz;
             if (anguloLuz > MathHelper.ToRadians(245)) anguloLuz = MathHelper.ToRadians(-65);
 
             foreach (Tank tank in listaTanques)
             {
-                tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()));
+                tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()), ref listaBalas, Content, random);
             }
+
+            foreach (Bala bala in listaBalas)
+            {
+                bala.Update(gameTime);
+                if (bala.position.X < -10 || bala.position.X > Terrain.altura + 10
+                    || bala.position.Z < -10 || bala.position.Z > Terrain.altura + 10
+                    || bala.position.Y < -10)
+                {
+                    listaBalasRemover.Add(bala);
+                }
+            }
+
+            foreach (Bala bala in listaBalasRemover)
+            {
+                listaBalas.Remove(bala);
+            }
+            listaBalasRemover.Clear();
 
             Camera.Update(gameTime, GraphicsDevice, tankPlayer1);
 
@@ -206,9 +231,16 @@ namespace Terreno
 
             GraphicsDevice.BlendState = BlendState.Opaque;
 
+            DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
+
             foreach (Tank tank in listaTanques)
             {
                 tank.Draw(efeitoTerrain);
+            }
+
+            foreach (Bala bala in listaBalas)
+            {
+                bala.Draw();
             }
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
@@ -216,8 +248,6 @@ namespace Terreno
             Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);
 
             
-
-            DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
 
             ////DEBUG
             ////Escrever a posição da camara no ecra

@@ -346,7 +346,8 @@ namespace Terreno
                     * Matrix.CreateRotationY(MathHelper.ToRadians(tank.rotacaoY))
                     ;
 
-                Vector3 thirdPersonReference = new Vector3(0, 5f, 8f);
+                //Vector3 thirdPersonReference = new Vector3(0, 5f, 8f);
+                Vector3 thirdPersonReference = new Vector3(0, 2.5f, 4f);
 
                 Vector3 transformedReference =
                     Vector3.Transform(thirdPersonReference, rotationMatrix);
@@ -360,18 +361,12 @@ namespace Terreno
                     cameraPosition.Y = alturaTerrenoPosicaoCam + 0.5f;
                 }
 
-                View = Matrix.CreateLookAt(cameraPosition, tank.position,
-                    Vector3.Up);
+                View = Matrix.CreateLookAt(cameraPosition, tank.position + rotationMatrix.Forward * 3,
+                    Vector3.Cross(rotationMatrix.Left, transformedReference));
 
                 position = cameraPosition;
                 direction = tank.position - position;
 
-                /*
-                cameraRotation = tank.rotacao;
-                position = tank.position + new Vector3(0, 0.5f, 2);
-                target = tank.position;
-                View = Matrix.CreateLookAt(position, target, Vector3.Up);
-                */
             }
             
         }

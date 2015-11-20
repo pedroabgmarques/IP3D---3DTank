@@ -13,11 +13,8 @@ namespace Terreno
     {
         #region Fields
 
-        // The XNA framework Model object that we are going to display.
         Model tankModel;
-        //  Matrizes do modelo
         public Matrix world;
-        // device onde será desenhado o tanque
         private GraphicsDevice device;
 
         Vector3 vetorBase;
@@ -26,9 +23,10 @@ namespace Terreno
         public float rotacaoY;
         public float scale;
         float velocidade;
-        private bool tanqueAtivo;
-        private Vector3 positionOffset;
-        private List<Tank> vizinhanca;
+        private bool tanqueAtivo; //Indica se este tanque é controlado pelo utilizador ou IA
+        private List<Tank> vizinhanca; //Tanques à volta deste tanque, dentro de um determinado raio
+        private KeyboardState kbAnterior;
+        public Matrix inclinationMatrix; //Matriz que descreve a inclinação do tanque, causada pelos declives do terreno
 
         public void ativarTanque()
         {
@@ -83,8 +81,11 @@ namespace Terreno
         float wheelBackLeftRotationValue, wheelBackRightRotationValue, wheelFrontLeftRotationValue, wheelFrontRightRotationValue;
         float steerRotationValue;
         float turretRotationValue;
-        float cannonRotationValue;
+        public float cannonRotationValue;
         float hatchRotationValue;
+
+        float turretRotationTarget;
+        int lastCannonFire = 0;
 
         #endregion
 
@@ -133,7 +134,7 @@ namespace Terreno
 
         #endregion
 
-        public Tank(GraphicsDevice graphicsDevice, Vector3 position, Random random)
+        public Tank(GraphicsDevice graphicsDevice, Vector3 position)
         {
             vizinhanca = new List<Tank>();
             vetorBase = new Vector3(0, 0, 1);
@@ -152,7 +153,6 @@ namespace Terreno
                 * Matrix.CreateTranslation(position);
             tanqueAtivo = false;
 
-            positionOffset = new Vector3((float)NextDouble(random, -20, 20), 0, (float)NextDouble(random, -20, 20));
         }
 
         private double NextDouble(Random rng, double min, double max)
@@ -195,14 +195,17 @@ namespace Terreno
 
         }
 
-        public void Update(GameTime gameTime, List<Tank> listaTanques, Tank player)
+        public void Update(GameTime gameTime, List<Tank> listaTanques, Tank player, ref List<Bala> listaBalas, ContentManager content, Random random)
         {
             if (tanqueAtivo)
             {
-                UpdateInput(gameTime);
+                //Tanque controlado pelo utilizador
+                UpdateInput(gameTime, content, ref listaBalas);
             }
             else
             {
+
+                //Tanque controlado por IA
 
                 //Surface follow
                 position.Y = getAlturaFromHeightmap();
@@ -216,14 +219,18 @@ namespace Terreno
                 Vector3 combinarDirecao = AI.combinarDirecao(vizinhanca, this);
                 Vector3 moverParaDirecao = AI.moverParaDirecao(this, player.position);
 
-                direcao += manterDistancia + moverParaDirecao; //+ combinardirecao + centroMassa;
+                direcao += manterDistancia + moverParaDirecao + combinarDirecao + centroMassa;
+
+                //Impede o tanque de virar instantâneamente
                 direcao = Vector3.Lerp(direcaoAnterior, direcao, 0.01f);
 
-                if ((direcao - direcaoAnterior).Length() > 0.005f)
+                if ((direcao - direcaoAnterior).Length() > 0.0075f)
                 {
+                    //Se a "vontade" de mover é suficientemente forte..
                     direcao.Normalize();
                     position += direcao * velocidade;
 
+                    //Rodar as rodas porque estamos a andar
                     this.wheelBackLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
                     this.wheelBackRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
                     this.wheelFrontLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
@@ -231,14 +238,62 @@ namespace Terreno
                 }
                 else
                 {
+
+                    //Estamos parados, apontar canhão e disparar
+
                     direcao = direcaoAnterior;
+                    //Rodar o canhão para posição
+                    CannonRotation = 0f;
+                    Vector3 alvo = player.position;
+                    Matrix rotationMatrix = Matrix.CreateRotationX(CannonRotation)
+                    * Matrix.CreateRotationY(TurretRotation)
+                    * Matrix.CreateFromQuaternion(this.inclinationMatrix.Rotation)
+                    ;
+                    Vector3 direcaoCanhao =
+                        Vector3.Transform(vetorBase, rotationMatrix);
+                    Vector3 direcaoParaAlvo = alvo - position;
+                    direcaoParaAlvo.Y = 0;
+                    Matrix rotationMatrixAlvo = Matrix.CreateRotationX(CannonRotation)
+                        * Matrix.CreateFromQuaternion(this.inclinationMatrix.Rotation)
+                    ;
+
+                    //Isto ainda não funciona...
+                    Vector3 direcaoParaAlvoRodado = Vector3.Transform(direcaoParaAlvo, rotationMatrixAlvo);
+                    /*
+                    DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(direcaoParaAlvoRodado), Color.Blue);
+                    DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(direcaoCanhao), Color.Red);
+                    */
+                    float anguloHorizontal = (float)Math.Acos(Vector3.Dot(Vector3.Normalize(direcaoParaAlvoRodado), Vector3.Normalize(direcaoCanhao)));
+                    bool readyToFire = false;
+                    this.turretRotationTarget = anguloHorizontal;
+
+                    if (turretRotationTarget > 0.007f)
+                    {
+                        TurretRotation -= 0.00625f;
+                    }
+                    else
+                    {
+                        readyToFire = true;
+                    }
+
+                    if (readyToFire && lastCannonFire > 300)
+                    {
+                        //Canhão em posição, arma recarregada, FIRE!
+                        Bala bala = new Bala(content, this);
+                        listaBalas.Add(bala);
+                        lastCannonFire = 0;
+                    }
+                    lastCannonFire++;
+
                 }
 
                 Vector3 Up = getNormalFromHeightmap();
                 Vector3 Right = Vector3.Cross(Up, direcao);
                 Vector3 Frente = Vector3.Cross(Up, Right);
 
-                this.world = Matrix.CreateWorld(position, Frente, Up)
+                inclinationMatrix = Matrix.CreateWorld(position, Frente, Up);
+
+                this.world = inclinationMatrix
                         * Matrix.CreateScale(scale)
                         * Matrix.CreateTranslation(position);
 
@@ -246,7 +301,7 @@ namespace Terreno
             }
         }
 
-        private void UpdateInput(GameTime gameTime)
+        private void UpdateInput(GameTime gameTime, ContentManager content, ref List<Bala> listaBalas)
         {
             KeyboardState currentKeyboardState = Keyboard.GetState();
 
@@ -256,25 +311,25 @@ namespace Terreno
             if (currentKeyboardState.IsKeyDown(Keys.Left))
             {
                 if (this.TurretRotation < 1.6f)
-                    this.TurretRotation += 0.0125f;
+                    this.TurretRotation += 0.00625f;
             }
             if (currentKeyboardState.IsKeyDown(Keys.Right))
             {
                 if (this.TurretRotation > -1.6f)
-                    this.TurretRotation -= 0.0125f;
+                    this.TurretRotation -= 0.00625f;
             }
 
             //  Move canhão (sem atirar 90 graus nem no próprio tanque)
             if (currentKeyboardState.IsKeyDown(Keys.Up))
             {
                 if (this.CannonRotation > -0.8f)
-                    this.CannonRotation -= 0.0125f;
+                    this.CannonRotation -= 0.00625f;
 
             }
             if (currentKeyboardState.IsKeyDown(Keys.Down))
             {
                 if (this.CannonRotation < 0.2f)
-                    this.CannonRotation += 0.0125f;
+                    this.CannonRotation += 0.00625f;
             }
 
             //  Abre e fecha porta
@@ -289,6 +344,7 @@ namespace Terreno
 
             if (currentKeyboardState.IsKeyDown(Keys.NumPad8))
             {
+                //Andar para a frente
                 this.wheelBackLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
                 this.wheelBackRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
                 this.wheelFrontLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
@@ -299,6 +355,7 @@ namespace Terreno
 
             if (currentKeyboardState.IsKeyDown(Keys.NumPad2))
             {
+                //Andar para trás
                 this.wheelBackLeftRotationValue = -(float)gameTime.TotalGameTime.TotalSeconds * 5;
                 this.wheelBackRightRotationValue = -(float)gameTime.TotalGameTime.TotalSeconds * 5;
                 this.wheelFrontLeftRotationValue = -(float)gameTime.TotalGameTime.TotalSeconds * 5;
@@ -309,6 +366,7 @@ namespace Terreno
 
             if (currentKeyboardState.IsKeyDown(Keys.NumPad6))
             {
+                //Virar para a direita
                 if (!currentKeyboardState.IsKeyDown(Keys.NumPad8) && !currentKeyboardState.IsKeyDown(Keys.NumPad2))
                 {
                     this.wheelBackLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 2;
@@ -341,6 +399,7 @@ namespace Terreno
 
             if (currentKeyboardState.IsKeyDown(Keys.NumPad4))
             {
+                //Virar para a esquerda
                 if (!currentKeyboardState.IsKeyDown(Keys.NumPad8) && !currentKeyboardState.IsKeyDown(Keys.NumPad2))
                 {
                     this.wheelBackLeftRotationValue = -(float)gameTime.TotalGameTime.TotalSeconds * 2;
@@ -369,6 +428,12 @@ namespace Terreno
                 steerRotationValue = 0.2f;
             }
 
+            if (currentKeyboardState.IsKeyDown(Keys.Space) && !kbAnterior.IsKeyDown(Keys.Space))
+            {
+                Bala bala = new Bala(content, this);
+                listaBalas.Add(bala);
+            }
+
             //Surface follow
             position.Y = getAlturaFromHeightmap();
 
@@ -379,9 +444,13 @@ namespace Terreno
             Vector3 Right = Vector3.Cross(Up, direcao);
             Vector3 Frente = Vector3.Cross(Up, Right);
 
-            this.world = Matrix.CreateWorld(position, Frente, Up)
+            inclinationMatrix = Matrix.CreateWorld(position, Frente, Up);
+
+            this.world = inclinationMatrix
                 * Matrix.CreateScale(scale)
                 * Matrix.CreateTranslation(position);
+
+            kbAnterior = currentKeyboardState;
         }
 
         private float getAlturaFromHeightmap()
@@ -411,7 +480,7 @@ namespace Terreno
             float Y = (1 - (position.Z - pontoA.Y)) * Yab + (position.Z - pontoA.Y) * Ycd;
 
             //Devolver a altura + um offset
-            return Y;
+            return Y + 0.01f;
         }
 
         private Vector3 getNormalFromHeightmap()
