@@ -23,7 +23,7 @@ namespace Terreno
         static public Matrix View, Projection, World;
 
         //Posição, direção e target
-        static private Vector3 position, direction, target;
+        static private Vector3 position, positionAnterior, direction, target;
 
         //Position getter
         static public Vector3 getPosition()
@@ -62,6 +62,7 @@ namespace Terreno
         //RasterizerStates para solid / wireframe
         static RasterizerState rasterizerStateSolid;
         static RasterizerState rasterizerStateWireFrame;
+        static public RasterizerState currentRasterizerState;
 
         //Desenhar normais do terreno
         static public bool drawNormals = false;
@@ -100,7 +101,7 @@ namespace Terreno
             //Criar e definir os resterizerStates a utilizar para desenhar a geometria
             //SOLID
             rasterizerStateSolid = new RasterizerState();
-            rasterizerStateSolid.CullMode = CullMode.None;
+            rasterizerStateSolid.CullMode = CullMode.CullCounterClockwiseFace;
             rasterizerStateSolid.MultiSampleAntiAlias = true;
             rasterizerStateSolid.FillMode = FillMode.Solid;
             rasterizerStateSolid.SlopeScaleDepthBias = 0.1f;
@@ -110,7 +111,9 @@ namespace Terreno
             rasterizerStateWireFrame = new RasterizerState();
             rasterizerStateWireFrame.CullMode = CullMode.None;
             rasterizerStateWireFrame.MultiSampleAntiAlias = true;
-            rasterizerStateWireFrame.FillMode = FillMode.WireFrame;         
+            rasterizerStateWireFrame.FillMode = FillMode.WireFrame;
+
+            currentRasterizerState = rasterizerStateSolid;
         }
 
         static private float getAlturaFromHeightmap(Vector3 posicao)
@@ -195,9 +198,6 @@ namespace Terreno
         static public void Update(GameTime gameTime, GraphicsDevice graphics, Tank tank)
         {
 
-            float posicaoXAnterior = position.X;
-            float posicaoZAnterior = position.Z;
-
             KeyboardState kb = Keyboard.GetState();
             MouseState mouseState = Mouse.GetState();
 
@@ -268,10 +268,12 @@ namespace Terreno
                 if (graphics.RasterizerState == rasterizerStateSolid)
                 {
                     graphics.RasterizerState = rasterizerStateWireFrame;
+                    currentRasterizerState = rasterizerStateWireFrame;
                 }
                 else
                 {
                     graphics.RasterizerState = rasterizerStateSolid;
+                    currentRasterizerState = rasterizerStateSolid;
                 }
             }
             if (kb.IsKeyDown(Keys.C) && !keyStateAnterior.IsKeyDown(Keys.C))
@@ -297,28 +299,34 @@ namespace Terreno
             {
                 drawNormals = !drawNormals;
             }
-            
-            //Limitar a câmara aos limites do terreno
-            if (position.X - 1 < 0)
-            {
-                position.X = posicaoXAnterior;
-            }
-            if (position.Z - 1 < 0)
-            {
-                position.Z = posicaoZAnterior;
-            }
-            if (position.X + 1 > Terrain.altura - 1)
-            {
-                position.X = posicaoXAnterior;
-            }
-            if (position.Z + 1 > Terrain.altura - 1)
-            {
-                position.Z = posicaoZAnterior;
-            }
+
+            position = LimitarCameraTerreno(position);
 
             UpdateViewMatrix(tank);
             mouseStateAnterior = mouseState;
             keyStateAnterior = kb;
+        }
+
+        static private Vector3 LimitarCameraTerreno(Vector3 position)
+        {
+            //Limitar a câmara aos limites do terreno
+            if (position.X < 1)
+            {
+                position.X = 1;
+            }
+            if (position.Z < 1)
+            {
+                position.Z = 1;
+            }
+            if (position.X > Terrain.altura - 1)
+            {
+                position.X = Terrain.altura - 1;
+            }
+            if (position.Z > Terrain.altura - 1)
+            {
+                position.Z = Terrain.altura - 1;
+            }
+            return position;
         }
 
         static private void UpdateViewMatrix(Tank tank = null)
@@ -336,6 +344,17 @@ namespace Terreno
                 direction = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
                 target = position + direction;
                 View = Matrix.CreateLookAt(position, target, Vector3.Up);
+                if (tipoCamera == TipoCamera.SurfaceFollow)
+                {
+                    position.Y = getAlturaFromHeightmap(position) + 1;
+                }
+                if (tipoCamera == TipoCamera.Free)
+                {
+                    if (position.Y < getAlturaFromHeightmap(position) + 0.2f)
+                    {
+                        position.Y = getAlturaFromHeightmap(position) + 0.2f;
+                    }
+                }
             }
 
             if (tipoCamera == TipoCamera.ThirdPerson)
@@ -354,6 +373,8 @@ namespace Terreno
 
                 Vector3 cameraPosition = transformedReference + tank.position;
 
+                cameraPosition = LimitarCameraTerreno(cameraPosition);
+
                 float alturaTerrenoPosicaoCam = getAlturaFromHeightmap(cameraPosition);
 
                 if (cameraPosition.Y < alturaTerrenoPosicaoCam + 0.5f)
@@ -368,6 +389,7 @@ namespace Terreno
                 direction = tank.position - position;
 
             }
+
             
         }
     }

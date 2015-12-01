@@ -16,9 +16,10 @@ namespace Terreno
         Model tankModel;
         public Matrix world;
         private GraphicsDevice device;
+        public bool alive;
 
         Vector3 vetorBase;
-        public Vector3 direcao, direcaoAnterior, target, position;
+        public Vector3 direcao, direcaoAnterior, target, position, positionAnterior;
         public Matrix rotacao;
         public float rotacaoY;
         public float scale;
@@ -42,6 +43,8 @@ namespace Terreno
         {
             return this.tanqueAtivo;
         }
+
+        public BoundingSphere boundingSphere;
 
 
         // Shortcut references to the bones that we are going to animate.
@@ -136,16 +139,19 @@ namespace Terreno
 
         public Tank(GraphicsDevice graphicsDevice, Vector3 position)
         {
+            alive = true;
             vizinhanca = new List<Tank>();
             vetorBase = new Vector3(0, 0, 1);
             direcao = vetorBase;
             direcaoAnterior = vetorBase;
+            positionAnterior = position;
             this.position = position;
             target = position + direcao;
             rotacaoY = 0;
             rotacao = Matrix.CreateRotationY(rotacaoY);
             velocidade = 0.025f;
             scale = 0.00125f;
+            boundingSphere = new BoundingSphere(position, 0.7f);
 
             device = graphicsDevice;
             world = rotacao
@@ -197,6 +203,7 @@ namespace Terreno
 
         public void Update(GameTime gameTime, List<Tank> listaTanques, Tank player, ref List<Bala> listaBalas, ContentManager content, Random random)
         {
+
             if (tanqueAtivo)
             {
                 //Tanque controlado pelo utilizador
@@ -210,7 +217,7 @@ namespace Terreno
                 //Surface follow
                 position.Y = getAlturaFromHeightmap();
 
-                //AI
+                //IA
                 float maxDistanciaVizinhanca = 20;
                 vizinhanca = listaTanques.FindAll(x => Vector3.Distance(x.position, this.position) < maxDistanciaVizinhanca);
 
@@ -240,29 +247,44 @@ namespace Terreno
                 {
 
                     //Estamos parados, apontar canhão e disparar
-
                     direcao = direcaoAnterior;
                     //Rodar o canhão para posição
                     CannonRotation = 0f;
                     Vector3 alvo = player.position;
-                    Matrix rotationMatrix = Matrix.CreateRotationX(CannonRotation)
-                    * Matrix.CreateRotationY(TurretRotation)
-                    * Matrix.CreateFromQuaternion(this.inclinationMatrix.Rotation)
-                    ;
-                    Vector3 direcaoCanhao =
-                        Vector3.Transform(vetorBase, rotationMatrix);
-                    Vector3 direcaoParaAlvo = alvo - position;
-                    direcaoParaAlvo.Y = 0;
-                    Matrix rotationMatrixAlvo = Matrix.CreateRotationX(CannonRotation)
-                        * Matrix.CreateFromQuaternion(this.inclinationMatrix.Rotation)
+
+                    Quaternion q = this.inclinationMatrix.Rotation;
+
+                    Matrix rotationMatrix = Matrix.CreateScale(scale) 
+                    * Matrix.CreateRotationX(CannonRotation) //rotação vertical do canhão
+                    * Matrix.CreateRotationY(TurretRotation) //rotação horizontal do canhão
+                    * Matrix.CreateFromQuaternion(q) //rotação do corpo do tanque - world excepto scale e translation
                     ;
 
+                    Vector3 direcaoCanhao =
+                        Vector3.Transform(vetorBase, rotationMatrix);
+
+                    Vector3 direcaoParaAlvo = alvo - position;
+                    direcaoParaAlvo.Y = 0;
+
+                    Matrix teste = Matrix.CreateFromQuaternion(q);
+
                     //Isto ainda não funciona...
-                    Vector3 direcaoParaAlvoRodado = Vector3.Transform(direcaoParaAlvo, rotationMatrixAlvo);
-                    /*
+                    Vector3 direcaoParaAlvoRodado = Vector3.Transform(direcaoParaAlvo,
+                        teste
+                    );
+                    
+                    //DEBUG
+                    //Desenhar os vetores relevantes do tanque
                     DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(direcaoParaAlvoRodado), Color.Blue);
                     DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(direcaoCanhao), Color.Red);
-                    */
+
+                    Matrix matrizInclinacao = Matrix.CreateFromQuaternion(q);
+                    DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(matrizInclinacao.Forward), Color.Green);
+                    DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(matrizInclinacao.Up), Color.Green);
+                    DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(matrizInclinacao.Right), Color.Green);
+                    DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(matrizInclinacao.Backward), Color.Green);
+                    DebugShapeRenderer.AddLine(position, position + Vector3.Normalize(matrizInclinacao.Left), Color.Green);
+                    
                     float anguloHorizontal = (float)Math.Acos(Vector3.Dot(Vector3.Normalize(direcaoParaAlvoRodado), Vector3.Normalize(direcaoCanhao)));
                     bool readyToFire = false;
                     this.turretRotationTarget = anguloHorizontal;
@@ -299,6 +321,17 @@ namespace Terreno
 
                 direcaoAnterior = direcao;
             }
+
+            //Atualizar posição do collider do tanque
+            boundingSphere.Center = position;
+
+            //Verificar colisões com outros tanques
+            CollisionDetector.CollisionTankTank(this, listaTanques);
+
+            //Manter tanque dentro dos limites do terreno
+            CollisionDetector.CollisionTankFrontiers(this);
+
+            positionAnterior = position;
         }
 
         private void UpdateInput(GameTime gameTime, ContentManager content, ref List<Bala> listaBalas)
@@ -565,6 +598,10 @@ namespace Terreno
                 }
                 mesh.Draw();
             }
+
+            //DEBUG
+            //Desenhar collider do tanque
+            DebugShapeRenderer.AddBoundingSphere(boundingSphere, Color.Blue);
         }
     }
 }

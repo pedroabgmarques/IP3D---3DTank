@@ -80,14 +80,14 @@ namespace Terreno
             //Gerar água
             Water.GenerateWater(GraphicsDevice, heightmap.Width);
 
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 30; i++)
             {
                 Tank tank = new Tank(GraphicsDevice, new Vector3(random.Next(10, Terrain.altura - 10), 50, random.Next(10, Terrain.altura - 10)));
                 tank.LoadContent(Content);
                 listaTanques.Add(tank);
             }
 
-            tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 50));
+            tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 10));
             tankPlayer1.LoadContent(Content);
             tankPlayer1.ativarTanque();
             listaTanques.Add(tankPlayer1);
@@ -194,26 +194,38 @@ namespace Terreno
                 tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()), ref listaBalas, Content, random);
             }
 
+            Camera.Update(gameTime, GraphicsDevice, listaTanques.Find(x => x.isAtivo()));
+
+            //Colisões entre balas e tanques
+            CollisionDetector.CollisionBalaTank(listaTanques, listaBalas, random);
+            //Remover coisas mortas
+            removeDeadStuff(gameTime);
+
+            base.Update(gameTime);
+        }
+
+        public void removeDeadStuff(GameTime gameTime)
+        {
+            //Remover balas que sairam dos limites do ecrã
             foreach (Bala bala in listaBalas)
             {
                 bala.Update(gameTime);
                 if (bala.position.X < -10 || bala.position.X > Terrain.altura + 10
                     || bala.position.Z < -10 || bala.position.Z > Terrain.altura + 10
-                    || bala.position.Y < -10)
+                    || bala.position.Y < 0)
                 {
                     listaBalasRemover.Add(bala);
                 }
             }
-
             foreach (Bala bala in listaBalasRemover)
             {
                 listaBalas.Remove(bala);
             }
             listaBalasRemover.Clear();
 
-            Camera.Update(gameTime, GraphicsDevice, tankPlayer1);
-
-            base.Update(gameTime);
+            //Remover tanques e balas que colidiram e foram marcadas como mortas
+            listaTanques.RemoveAll(x => !x.alive);
+            listaBalas.RemoveAll(x => !x.alive);
         }
 
         /// <summary>
@@ -231,8 +243,6 @@ namespace Terreno
 
             GraphicsDevice.BlendState = BlendState.Opaque;
 
-            DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
-
             foreach (Tank tank in listaTanques)
             {
                 tank.Draw(efeitoTerrain);
@@ -247,18 +257,20 @@ namespace Terreno
 
             Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);
 
+            DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
             
 
             ////DEBUG
             ////Escrever a posição da camara no ecra
-            //spriteBatch.Begin();
-            //spriteBatch.DrawString(spriteFont,
-            //    "Camera: " + Camera.getPosition().X.ToString() + "; " + Camera.getPosition().Y.ToString() + "; " + Camera.getPosition().Z.ToString(), Vector2.Zero, Color.White);
-            //spriteBatch.End();
+            spriteBatch.Begin();
+            spriteBatch.DrawString(spriteFont,
+                "Camera: " + Camera.getPosition().X.ToString() + "; " + Camera.getPosition().Y.ToString() + "; " + Camera.getPosition().Z.ToString(), Vector2.Zero, Color.White);
+            spriteBatch.End();
 
-            ////Repor os estados alterados pelo spritebatch
-            //GraphicsDevice.BlendState = BlendState.Opaque;
-            //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            //Repor os estados alterados pelo spritebatch
+            GraphicsDevice.BlendState = BlendState.Opaque;
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            GraphicsDevice.RasterizerState = Camera.currentRasterizerState;
 
             base.Draw(gameTime);
         }

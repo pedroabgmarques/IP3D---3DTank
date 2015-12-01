@@ -41,6 +41,7 @@
     <Compile Include="AI.cs" />
     <Compile Include="Bala.cs" />
     <Compile Include="Camera.cs" />
+    <Compile Include="CollisionDetector.cs" />
     <Compile Include="Create3DAxis.cs" />
     <Compile Include="DebugShapeRenderer.cs" />
     <Compile Include="Game1.cs" />

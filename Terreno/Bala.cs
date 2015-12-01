@@ -18,11 +18,22 @@ namespace Terreno
         private Vector3 direcao;
         private Matrix rotationMatrix;
         private float totalTimePassed;
+        private BoundingSphere boundingSphere;
+        public bool alive;
+        public Tank tanqueQueDisparou;
+
+        public BoundingSphere BoundingSphere
+        {
+            get { return boundingSphere; }
+            set { boundingSphere = value; }
+        }
+        
 
         public Bala(ContentManager content, Tank tanqueQueDisparou)
         {
-
-            speed = 0.25f;
+            this.tanqueQueDisparou = tanqueQueDisparou;
+            speed = 0.025f;
+            alive = true;
 
             vetorBase = new Vector3(0, 0, 1);
 
@@ -31,10 +42,13 @@ namespace Terreno
                    * Matrix.CreateRotationY(tanqueQueDisparou.TurretRotation)
                    * Matrix.CreateFromQuaternion(tanqueQueDisparou.inclinationMatrix.Rotation)
                    ;
-            Vector3 offset = new Vector3(0, 0.5f, 0.6f);
+            Vector3 offset = new Vector3(0, 0.3f, 0.3f);
             direcao =
                 Vector3.Transform(vetorBase, rotationMatrix);
-            position = tanqueQueDisparou.position + Vector3.Transform(offset, rotationMatrix);
+            position = tanqueQueDisparou.position + offset;
+
+            boundingSphere.Center = position;
+            boundingSphere.Radius = 0.1f;
 
             LoadContent(content);
         }
@@ -48,7 +62,9 @@ namespace Terreno
         {
             totalTimePassed += (float)gameTime.ElapsedGameTime.Milliseconds/4096.0f ;
             position += direcao * speed;
-            position.Y -= totalTimePassed * totalTimePassed * speed; //Gravidade
+            position.Y -= totalTimePassed * totalTimePassed * speed * 2; //Gravidade
+
+            boundingSphere.Center = position;
         }
 
         public void Draw()
@@ -69,11 +85,14 @@ namespace Terreno
                         * Matrix.CreateTranslation(this.position);
                     effect.View = Camera.View;
                     effect.Projection = Camera.Projection;
-                    effect.DiffuseColor = Color.Green.ToVector3();
+                    effect.DiffuseColor = Color.Red.ToVector3();
                 }
                 // Draw the mesh, using the effects set above.
                 mesh.Draw();
             }
+
+            //DEBUG
+            DebugShapeRenderer.AddBoundingSphere(boundingSphere, Color.Yellow);
         }
     }
 }
