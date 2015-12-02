@@ -32,7 +32,7 @@ namespace Terreno
         public Bala(ContentManager content, Tank tanqueQueDisparou)
         {
             this.tanqueQueDisparou = tanqueQueDisparou;
-            speed = 0.025f;
+            speed = 0.2f;
             alive = true;
 
             vetorBase = new Vector3(0, 0, 1);
@@ -42,9 +42,12 @@ namespace Terreno
                    * Matrix.CreateRotationY(tanqueQueDisparou.TurretRotation)
                    * Matrix.CreateFromQuaternion(tanqueQueDisparou.inclinationMatrix.Rotation)
                    ;
-            Vector3 offset = new Vector3(0, 0.3f, 0.3f);
-            direcao =
-                Vector3.Transform(vetorBase, rotationMatrix);
+            Vector3 offset = new Vector3(0, 0.5f, 0.8f);
+           
+            direcao = Vector3.Transform(vetorBase, rotationMatrix);
+
+            offset = Vector3.Transform(offset, rotationMatrix);
+
             position = tanqueQueDisparou.position + offset;
 
             boundingSphere.Center = position;
