@@ -116,7 +116,7 @@ namespace Terreno
             currentRasterizerState = rasterizerStateSolid;
         }
 
-        static private float getAlturaFromHeightmap(Vector3 posicao)
+        static public float getAlturaFromHeightmap(Vector3 posicao)
         {
             //Posição arredondada para baixo
             int xPos, zPos;

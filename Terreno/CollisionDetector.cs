@@ -61,5 +61,15 @@ namespace Terreno
             }
         }
 
+        static public void CollisionBalaTerrain(List<Bala> listaBalas)
+        {
+            foreach (Bala bala in listaBalas)
+            {
+                if(bala.position.Y <= Camera.getAlturaFromHeightmap(bala.position)){
+                    bala.alive = false;
+                }
+            }
+        }
+
     }
 }

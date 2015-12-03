@@ -198,6 +198,8 @@ namespace Terreno
 
             //Colisões entre balas e tanques
             CollisionDetector.CollisionBalaTank(listaTanques, listaBalas, random);
+            //Colisões entre balas e terreno
+            CollisionDetector.CollisionBalaTerrain(listaBalas);
             //Remover coisas mortas
             removeDeadStuff(gameTime);
 
