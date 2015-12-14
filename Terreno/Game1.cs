@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using Terreno.Particulas;
 
 namespace Terreno
 {
@@ -12,7 +13,7 @@ namespace Terreno
     public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
-        BasicEffect efeito3DAxis, efeitoTerrain, efeitoWater, efeitoDeepWater;
+        BasicEffect efeito3DAxis, efeitoTerrain, efeitoWater, efeitoDeepWater, efeitoBasico;
         Texture2D heightmap, terrainTexture, waterTexture;
         float anguloLuz;
         float stepAnguloLuz;
@@ -22,17 +23,26 @@ namespace Terreno
         List<Tank> listaTanques;
         Tank tankPlayer1;
         KeyboardState kbAnterior;
-        List<Bala> listaBalas;
-        List<Bala> listaBalasRemover;
+        SistemaParticulasChuva particulasChuva;
+        int raioNuvem;
+        Skybox skybox;
+        DepthStencilState depthBufferDisabled = new DepthStencilState();
+        DepthStencilState depthBufferEnabled = new DepthStencilState();
+        RasterizerState rasterizerCullmodeNone = new RasterizerState();
+        RasterizerState rasterizerCullmodeClockwise = new RasterizerState();
+        RasterizerState originalRasterizerState;
+
+        bool desenharTanques, desenharTerreno;
+        
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             graphics.GraphicsProfile = GraphicsProfile.HiDef;
             graphics.PreferMultiSampling = true;
-            graphics.PreferredBackBufferWidth = 1366;
-            graphics.PreferredBackBufferHeight = 768;
-            graphics.IsFullScreen = false;
+            graphics.PreferredBackBufferWidth = 1366; //683;
+            graphics.PreferredBackBufferHeight = 768; //384;
+            graphics.IsFullScreen = true;
             graphics.SynchronizeWithVerticalRetrace = true;
             Content.RootDirectory = "Content";
         }
@@ -45,17 +55,24 @@ namespace Terreno
         /// </summary>
         protected override void Initialize()
         {
+
             random = new Random();
 
             Create3DAxis.Initialize(GraphicsDevice);
 
             DebugShapeRenderer.Initialize(GraphicsDevice);
 
+            BalaManager.Initialize(Content);
+
             listaTanques = new List<Tank>();
 
-            listaBalas = new List<Bala>();
+            depthBufferDisabled.DepthBufferEnable = false; /* Enable the depth buffer */
+            depthBufferDisabled.DepthBufferWriteEnable = false; /* When drawing to the screen, write to the depth buffer */
+            depthBufferEnabled.DepthBufferEnable = true; /* Enable the depth buffer */
+            depthBufferEnabled.DepthBufferWriteEnable = true; /* When drawing to the screen, write to the depth buffer */
 
-            listaBalasRemover = new List<Bala>();
+            desenharTanques = true;
+            desenharTerreno = true;
 
             base.Initialize();
         }
@@ -70,27 +87,53 @@ namespace Terreno
 
             //Load assets
             heightmap = Content.Load<Texture2D>("heightmap");
-            terrainTexture = Content.Load<Texture2D>("terrainTexture");
+            terrainTexture = Content.Load<Texture2D>("desert_texture");
             waterTexture = Content.Load<Texture2D>("water_texture");
             spriteFont = Content.Load<SpriteFont>("arial_12");
 
             //Generate terrain
             Terrain.GenerateTerrain(GraphicsDevice, heightmap);
 
+            raioNuvem = Terrain.altura / 2;
+
+            particulasChuva = new SistemaParticulasChuva(random, raioNuvem / 2, 100, 20);
+            SistemaParticulasExplosao.Initialize(random);
+
             //Gerar água
             Water.GenerateWater(GraphicsDevice, heightmap.Width);
 
-            for (int i = 0; i < 30; i++)
+            Equipa equipa;
+            for (int i = 0; i < 32; i++)
             {
-                Tank tank = new Tank(GraphicsDevice, new Vector3(random.Next(10, Terrain.altura - 10), 50, random.Next(10, Terrain.altura - 10)));
+                equipa = ContarTanquesEquipa(Equipa.Empire) <= ContarTanquesEquipa(Equipa.Rebels) ? Equipa.Empire : Equipa.Rebels;
+                Tank tank;
+                if (equipa == Equipa.Empire)
+                {
+                    tank = new Tank(random, GraphicsDevice, new Vector3(random.Next(Terrain.altura - 80, Terrain.altura - 10), 5, random.Next(10, 80)), equipa);
+                }
+                else
+                {
+                    tank = new Tank(random, GraphicsDevice, new Vector3(random.Next(10, 80), 5, random.Next(Terrain.altura - 80, Terrain.altura - 10)), equipa);
+                }
+                
                 tank.LoadContent(Content);
                 listaTanques.Add(tank);
             }
 
-            tankPlayer1 = new Tank(graphics.GraphicsDevice, new Vector3(50, 5, 10));
+            equipa = ContarTanquesEquipa(Equipa.Empire) <= ContarTanquesEquipa(Equipa.Rebels) ? Equipa.Empire : Equipa.Rebels;
+            if (equipa == Equipa.Empire)
+            {
+                tankPlayer1 = new Tank(random, GraphicsDevice, new Vector3(random.Next(Terrain.altura - 50, Terrain.altura - 10), 5, random.Next(10, 50)), equipa);
+            }
+            else
+            {
+                tankPlayer1 = new Tank(random, GraphicsDevice, new Vector3(random.Next(10, 50), 5, random.Next(Terrain.altura - 50, Terrain.altura - 10)), equipa);
+            }
             tankPlayer1.LoadContent(Content);
-            tankPlayer1.ativarTanque();
+            tankPlayer1.ativarTanque(listaTanques);
             listaTanques.Add(tankPlayer1);
+
+            DefinirSargentoInimigo(tankPlayer1, random);
 
             //Inicializar a camara
             Camera.Initialize(GraphicsDevice);
@@ -99,15 +142,18 @@ namespace Terreno
             efeito3DAxis = new BasicEffect(GraphicsDevice);
             efeito3DAxis.VertexColorEnabled = true;
 
+            efeitoBasico = new BasicEffect(GraphicsDevice);
+            efeitoBasico.VertexColorEnabled = true;
+
             efeitoTerrain = new BasicEffect(GraphicsDevice);
             efeitoTerrain.Texture = terrainTexture;
             efeitoTerrain.TextureEnabled = true;
             efeitoTerrain.PreferPerPixelLighting = true;
             efeitoTerrain.LightingEnabled = true; // ativar a iluminação
-            efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(10, 8, 7);
+            efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(0.48f, 0.48f, 0.48f);
             efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
-            efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0.2f, 0.2f, 0.2f);
-            efeitoTerrain.AmbientLightColor = new Vector3(2.5f, 2.5f, 2.5f);
+            efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0.08f, 0.08f, 0.08f);
+            efeitoTerrain.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             efeitoTerrain.EmissiveColor = new Vector3(0f, 0f, 0f);
             efeitoTerrain.DirectionalLight0.Enabled = true;
             efeitoTerrain.FogColor = new Color(0, 0, 15).ToVector3();
@@ -152,7 +198,39 @@ namespace Terreno
             anguloLuz = MathHelper.ToRadians(90);
             stepAnguloLuz = MathHelper.TwoPi / (360 * 5);
             //stepAnguloLuz = 0;
+
+            //skybox = new Skybox("deserto", Content);
         }
+
+        private int ContarTanquesEquipa(Equipa equipa)
+        {
+            int contador = 0;
+            foreach (Tank tank in listaTanques)
+            {
+                if (tank.equipa == equipa)
+                {
+                    contador++;
+                }
+            }
+            return contador;
+        }
+
+
+        private void DefinirSargentoInimigo(Tank player, Random random)
+        {
+            List<Tank> sargentosPotenciais = new List<Tank>(300);
+            foreach (Tank tank in listaTanques)
+            {
+                if (tank.equipa != player.equipa)
+                {
+                    sargentosPotenciais.Add(tank);
+                }
+            }
+            sargentosPotenciais[random.Next(0, sargentosPotenciais.Count)].sargento = true;
+            sargentosPotenciais.Clear();
+        }
+
+        
 
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
@@ -177,7 +255,17 @@ namespace Terreno
             {
                 tankPlayer1.desativarTanque();
                 tankPlayer1 = listaTanques[random.Next(0, listaTanques.Count)];
-                tankPlayer1.ativarTanque();
+                tankPlayer1.ativarTanque(listaTanques);
+            }
+
+            if (Keyboard.GetState().IsKeyDown(Keys.Y) && !kbAnterior.IsKeyDown(Keys.Y))
+            {
+                desenharTanques = !desenharTanques;
+            }
+
+            if (Keyboard.GetState().IsKeyDown(Keys.T) && !kbAnterior.IsKeyDown(Keys.T))
+            {
+                desenharTerreno = !desenharTerreno;
             }
 
             kbAnterior = Keyboard.GetState();
@@ -191,15 +279,18 @@ namespace Terreno
 
             foreach (Tank tank in listaTanques)
             {
-                tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()), ref listaBalas, Content, random);
+                tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()), Content, random);
             }
 
             Camera.Update(gameTime, GraphicsDevice, listaTanques.Find(x => x.isAtivo()));
 
+            particulasChuva.Update(random);
+            SistemaParticulasExplosao.Update(random, gameTime);
+
             //Colisões entre balas e tanques
-            CollisionDetector.CollisionBalaTank(listaTanques, listaBalas, random);
+            CollisionDetector.CollisionBalaTank(listaTanques, BalaManager.getListaBalas(), random);
             //Colisões entre balas e terreno
-            CollisionDetector.CollisionBalaTerrain(listaBalas);
+            CollisionDetector.CollisionBalaTerrain(BalaManager.getListaBalas(), random);
             //Remover coisas mortas
             removeDeadStuff(gameTime);
 
@@ -209,25 +300,22 @@ namespace Terreno
         public void removeDeadStuff(GameTime gameTime)
         {
             //Remover balas que sairam dos limites do ecrã
-            foreach (Bala bala in listaBalas)
+            foreach (Bala bala in BalaManager.getListaBalas())
             {
                 bala.Update(gameTime);
                 if (bala.position.X < -10 || bala.position.X > Terrain.altura + 10
                     || bala.position.Z < -10 || bala.position.Z > Terrain.altura + 10
-                    || bala.position.Y < 0)
+                    || bala.position.Y < 0
+                    || !bala.alive)
                 {
-                    listaBalasRemover.Add(bala);
+                    BalaManager.KillBala(bala);
                 }
             }
-            foreach (Bala bala in listaBalasRemover)
-            {
-                listaBalas.Remove(bala);
-            }
-            listaBalasRemover.Clear();
 
-            //Remover tanques e balas que colidiram e foram marcadas como mortas
+            BalaManager.RemoveDeadBalas();
+            
+            //Remover tanques que colidiram e foram marcadas como mortas
             listaTanques.RemoveAll(x => !x.alive);
-            listaBalas.RemoveAll(x => !x.alive);
         }
 
         /// <summary>
@@ -238,43 +326,77 @@ namespace Terreno
         {
             GraphicsDevice.Clear(new Color(0, 0, 15));
 
+            //desenharSkyBox();
+
             // TODO: Add your drawing code here
             Create3DAxis.Draw(GraphicsDevice, efeito3DAxis);
 
-            Terrain.Draw(GraphicsDevice, efeitoTerrain);
+            if(desenharTerreno)
+                Terrain.Draw(GraphicsDevice, efeitoTerrain);
 
             GraphicsDevice.BlendState = BlendState.Opaque;
 
-            foreach (Tank tank in listaTanques)
+            if (desenharTanques)
             {
-                tank.Draw(efeitoTerrain);
+                //Desenhar os tanques visiveis do ponto de vista da camara
+                foreach (Tank tank in listaTanques)
+                {
+                    if (Camera.frustum.Contains(tank.boundingSphere) != ContainmentType.Disjoint)
+                    {
+                        tank.Draw(efeitoTerrain);
+                    }
+
+                }
+            }
+            
+
+            //Desenhar as balas visiveis do ponto de vista da camara
+            foreach (Bala bala in BalaManager.getListaBalas())
+            {
+                if (Camera.frustum.Contains(bala.BoundingSphere) != ContainmentType.Disjoint)
+                {
+                    bala.Draw();
+                }
+                
             }
 
-            foreach (Bala bala in listaBalas)
-            {
-                bala.Draw();
-            }
+            if (desenharTerreno) particulasChuva.Draw(GraphicsDevice, efeitoBasico);
+            SistemaParticulasExplosao.Draw(GraphicsDevice, efeitoBasico);
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
 
-            Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);
-
+            if (desenharTerreno)
+                Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);
+            
             DebugShapeRenderer.Draw(gameTime, Camera.View, Camera.Projection);
             
+            ////////DEBUG
+            ////////Escrever a posição da camara no ecra
+            //spriteBatch.Begin();
+            //spriteBatch.DrawString(spriteFont,
+            //    "Particulas: " + SistemaParticulasExplosao.getNParticulasVivas().ToString() + "; " + SistemaParticulasExplosao.getNParticulasMortas().ToString(), Vector2.Zero, Color.Red);
+            //spriteBatch.DrawString(spriteFont,
+            //    "Balas: " + BalaManager.getNBalasVivas().ToString() + "; " + BalaManager.getNBalasMortas().ToString(), new Vector2(0, 10), Color.Red);
+            //spriteBatch.End();
 
-            ////DEBUG
-            ////Escrever a posição da camara no ecra
-            spriteBatch.Begin();
-            spriteBatch.DrawString(spriteFont,
-                "Camera: " + Camera.getPosition().X.ToString() + "; " + Camera.getPosition().Y.ToString() + "; " + Camera.getPosition().Z.ToString(), Vector2.Zero, Color.White);
-            spriteBatch.End();
-
-            //Repor os estados alterados pelo spritebatch
-            GraphicsDevice.BlendState = BlendState.Opaque;
-            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-            GraphicsDevice.RasterizerState = Camera.currentRasterizerState;
+            ////Repor os estados alterados pelo spritebatch
+            //GraphicsDevice.BlendState = BlendState.Opaque;
+            //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            //GraphicsDevice.RasterizerState = Camera.currentRasterizerState;
 
             base.Draw(gameTime);
+        }
+
+        private void desenharSkyBox()
+        {
+            //desenhar a SkyBox
+            GraphicsDevice.DepthStencilState = depthBufferDisabled;
+            originalRasterizerState = graphics.GraphicsDevice.RasterizerState;
+            graphics.GraphicsDevice.RasterizerState = rasterizerCullmodeNone;
+            skybox.Draw();
+            graphics.GraphicsDevice.RasterizerState = originalRasterizerState;
+            GraphicsDevice.DepthStencilState = depthBufferEnabled;
+
         }
     }
 }

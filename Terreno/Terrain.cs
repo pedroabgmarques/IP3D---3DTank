@@ -23,6 +23,8 @@ namespace Terreno
         static private VertexBuffer vertexBuffer;
         static private IndexBuffer indexBuffer;
 
+        static SamplerState sampler;
+
         //Dimensões do terreno
         static public int altura;
 
@@ -49,7 +51,7 @@ namespace Terreno
 
                     //Escalas:
                     //bigaltura (512 * 512): 0.2f;
-                    //altura (128 * 128): 0.035f;
+                    //altura (128 * 128): 0.04f;
                     float scale = 0.04f;
                     vertexes[(2 * j * altura) + i] = new VertexPositionNormalTexture(
                         new Vector3(x, texels[(z * altura + x)].R * scale, z), 
@@ -87,6 +89,15 @@ namespace Terreno
             
             indexBuffer = new IndexBuffer(graphics, typeof(int), indexes.Length, BufferUsage.WriteOnly);
             indexBuffer.SetData<int>(indexes);
+
+            //Definir os buffers a utilizar
+            graphics.SetVertexBuffer(vertexBuffer);
+            graphics.Indices = indexBuffer;
+
+            //Ativa o anisotropic filtering
+            sampler = new SamplerState();
+            sampler.Filter = TextureFilter.Anisotropic;
+            sampler.MaxAnisotropy = 4;
         }
 
         static private void CalcularNormais()
@@ -403,7 +414,76 @@ namespace Terreno
             }
         }
 
-    static public void Draw(GraphicsDevice graphics, BasicEffect efeito)
+        static public float getAlturaFromHeightmap(Vector3 position)
+        {
+            //Posição arredondada para baixo da camara
+            int xTank, zTank;
+            xTank = (int)position.X;
+            zTank = (int)position.Z;
+
+            //Os 4 vértices que rodeiam a posição da camara
+            Vector2 pontoA, pontoB, pontoC, pontoD;
+            pontoA = new Vector2(xTank, zTank);
+            pontoB = new Vector2(xTank + 1, zTank);
+            pontoC = new Vector2(xTank, zTank + 1);
+            pontoD = new Vector2(xTank + 1, zTank + 1);
+
+            if (position.X > 0 && position.X < Terrain.altura
+                        && position.Z > 0 && position.Z < Terrain.altura)
+            {
+
+                //Recolher a altura de cada um dos 4 vértices à volta do tanque a partir do heightmap
+                float Ya, Yb, Yc, Yd;
+                Ya = Terrain.vertexes[(int)pontoA.X * Terrain.altura + (int)pontoA.Y].Position.Y;
+                Yb = Terrain.vertexes[(int)pontoB.X * Terrain.altura + (int)pontoB.Y].Position.Y;
+                Yc = Terrain.vertexes[(int)pontoC.X * Terrain.altura + (int)pontoC.Y].Position.Y;
+                Yd = Terrain.vertexes[(int)pontoD.X * Terrain.altura + (int)pontoD.Y].Position.Y;
+
+                //Interpolação bilenear (dada nas aulas)
+                float Yab = (1 - (position.X - pontoA.X)) * Ya + (position.X - pontoA.X) * Yb;
+                float Ycd = (1 - (position.X - pontoC.X)) * Yc + (position.X - pontoC.X) * Yd;
+                float Y = (1 - (position.Z - pontoA.Y)) * Yab + (position.Z - pontoA.Y) * Ycd;
+
+                //Devolver a altura + um offset
+                return Y + 0.01f;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+        static public Vector3 getNormalFromHeightmap(Vector3 position)
+        {
+            //Posição arredondada para baixo da camara
+            int xTank, zTank;
+            xTank = (int)position.X;
+            zTank = (int)position.Z;
+
+            //Os 4 vértices que rodeiam a posição da camara
+            Vector2 pontoA, pontoB, pontoC, pontoD;
+            pontoA = new Vector2(xTank, zTank);
+            pontoB = new Vector2(xTank + 1, zTank);
+            pontoC = new Vector2(xTank, zTank + 1);
+            pontoD = new Vector2(xTank + 1, zTank + 1);
+
+
+            Vector3 Ya, Yb, Yc, Yd;
+            Ya = Terrain.vertexes[(int)pontoA.X * Terrain.altura + (int)pontoA.Y].Normal;
+            Yb = Terrain.vertexes[(int)pontoB.X * Terrain.altura + (int)pontoB.Y].Normal;
+            Yc = Terrain.vertexes[(int)pontoC.X * Terrain.altura + (int)pontoC.Y].Normal;
+            Yd = Terrain.vertexes[(int)pontoD.X * Terrain.altura + (int)pontoD.Y].Normal;
+
+            //Interpolação bilenear (dada nas aulas)
+            Vector3 Yab = (1 - (position.X - pontoA.X)) * Ya + (position.X - pontoA.X) * Yb;
+            Vector3 Ycd = (1 - (position.X - pontoC.X)) * Yc + (position.X - pontoC.X) * Yd;
+            Vector3 Y = (1 - (position.Z - pontoA.Y)) * Yab + (position.Z - pontoA.Y) * Ycd;
+
+            //Devolver normal
+            return Y;
+        }
+
+        static public void Draw(GraphicsDevice graphics, BasicEffect efeito)
         {
             //World, View, Projection
             efeito.World = Matrix.Identity; //* Matrix.CreateTranslation(new Vector3(- (float)(altura-1) / 2, -altura/6, - (float)(altura-1) / 2));
@@ -411,6 +491,8 @@ namespace Terreno
             efeito.Projection = Camera.Projection;
 
             DebugShapeRenderer.SetWorld(efeito.World);
+
+            graphics.SamplerStates[0] = sampler;
 
             //DEBUG
             //Desenhar normais
@@ -427,17 +509,6 @@ namespace Terreno
             }
             */
             
-
-            //Definir os buffers a utilizar
-            graphics.SetVertexBuffer(vertexBuffer);
-            graphics.Indices = indexBuffer;
-
-            //Ativa o anisotropic filtering
-            SamplerState sampler = new SamplerState();
-            sampler.Filter = TextureFilter.Anisotropic;
-            sampler.MaxAnisotropy = 16;
-            graphics.SamplerStates[0] = sampler;
-
             // Commit the changes to basic effect so it knows you made modifications  
             efeito.CurrentTechnique.Passes[0].Apply();
 

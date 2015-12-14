@@ -70,6 +70,9 @@ namespace Terreno
         //Tipo de camara (FPS, livre)
         static public TipoCamera tipoCamera;
 
+        //Frustum da camara
+        static public BoundingFrustum frustum;
+
 
         static public void Initialize(GraphicsDevice graphics)
         {
@@ -92,7 +95,6 @@ namespace Terreno
             //Inicializar as matrizes world, view e projection
             World = Matrix.Identity;
             Foward();
-            //UpdateViewMatrix();
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45),
                 graphics.Viewport.AspectRatio,
                 nearPlane,
@@ -114,6 +116,8 @@ namespace Terreno
             rasterizerStateWireFrame.FillMode = FillMode.WireFrame;
 
             currentRasterizerState = rasterizerStateSolid;
+
+            frustum = new BoundingFrustum(Matrix.Identity);
         }
 
         static public float getAlturaFromHeightmap(Vector3 posicao)
@@ -130,20 +134,36 @@ namespace Terreno
             pontoC = new Vector2(xPos, zPos + 1);
             pontoD = new Vector2(xPos + 1, zPos + 1);
 
-            //Recolher a altura de cada um dos 4 vértices à volta da câmara a partir do heightmap
-            float Ya, Yb, Yc, Yd;
-            Ya = Terrain.vertexes[(int)pontoA.X * Terrain.altura + (int)pontoA.Y].Position.Y;
-            Yb = Terrain.vertexes[(int)pontoB.X * Terrain.altura + (int)pontoB.Y].Position.Y;
-            Yc = Terrain.vertexes[(int)pontoC.X * Terrain.altura + (int)pontoC.Y].Position.Y;
-            Yd = Terrain.vertexes[(int)pontoD.X * Terrain.altura + (int)pontoD.Y].Position.Y;
+            if(pontoA.X > 0 && pontoA.X < Terrain.altura
+            && pontoA.Y > 0 && pontoA.Y < Terrain.altura
+            && pontoB.X > 0 && pontoB.X < Terrain.altura
+            && pontoB.Y > 0 && pontoB.Y < Terrain.altura
+            && pontoC.X > 0 && pontoC.X < Terrain.altura
+            && pontoC.Y > 0 && pontoC.Y < Terrain.altura
+            && pontoD.X > 0 && pontoD.X < Terrain.altura
+            && pontoD.Y > 0 && pontoD.Y < Terrain.altura)
+            {
+                //Recolher a altura de cada um dos 4 vértices à volta da câmara a partir do heightmap
+                float Ya, Yb, Yc, Yd;
+                Ya = Terrain.vertexes[(int)pontoA.X * Terrain.altura + (int)pontoA.Y].Position.Y;
+                Yb = Terrain.vertexes[(int)pontoB.X * Terrain.altura + (int)pontoB.Y].Position.Y;
+                Yc = Terrain.vertexes[(int)pontoC.X * Terrain.altura + (int)pontoC.Y].Position.Y;
+                Yd = Terrain.vertexes[(int)pontoD.X * Terrain.altura + (int)pontoD.Y].Position.Y;
 
-            //Interpolação bilenear (dada nas aulas)
-            float Yab = (1 - (posicao.X - pontoA.X)) * Ya + (posicao.X - pontoA.X) * Yb;
-            float Ycd = (1 - (posicao.X - pontoC.X)) * Yc + (posicao.X - pontoC.X) * Yd;
-            float Y = (1 - (posicao.Z - pontoA.Y)) * Yab + (posicao.Z - pontoA.Y) * Ycd;
+                //Interpolação bilenear (dada nas aulas)
+                float Yab = (1 - (posicao.X - pontoA.X)) * Ya + (posicao.X - pontoA.X) * Yb;
+                float Ycd = (1 - (posicao.X - pontoC.X)) * Yc + (posicao.X - pontoC.X) * Yd;
+                float Y = (1 - (posicao.Z - pontoA.Y)) * Yab + (posicao.Z - pontoA.Y) * Ycd;
 
-            //Devolver a altura
-            return Y;
+                //Devolver a altura
+                return Y;
+            }
+            else
+            {
+                return -1;
+            }
+
+            
         }
 
         static private void Foward()
@@ -305,26 +325,28 @@ namespace Terreno
             UpdateViewMatrix(tank);
             mouseStateAnterior = mouseState;
             keyStateAnterior = kb;
+
+            positionAnterior = position;
         }
 
         static private Vector3 LimitarCameraTerreno(Vector3 position)
         {
             //Limitar a câmara aos limites do terreno
-            if (position.X < 1)
+            if (position.X - 1 < 0)
             {
-                position.X = 1;
+                position.X = positionAnterior.X;
             }
-            if (position.Z < 1)
+            if (position.Z - 1 < 0)
             {
-                position.Z = 1;
+                position.Z = positionAnterior.Z;
             }
-            if (position.X > Terrain.altura - 1)
+            if (position.X + 1 > Terrain.altura - 1)
             {
-                position.X = Terrain.altura - 1;
+                position.X = positionAnterior.X;
             }
-            if (position.Z > Terrain.altura - 1)
+            if (position.Z + 1 > Terrain.altura - 1)
             {
-                position.Z = Terrain.altura - 1;
+                position.Z = positionAnterior.Z;
             }
             return position;
         }
@@ -390,6 +412,8 @@ namespace Terreno
 
             }
 
+            frustum.Matrix = View * Projection;
+            
             
         }
     }

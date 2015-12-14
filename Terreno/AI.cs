@@ -17,7 +17,7 @@ namespace Terreno
             Vector3 centroMassa = Vector3.Zero;
             foreach (Tank boid in lista)
             {
-                if (boid != tank)
+                if (boid != tank && tank.equipa == boid.equipa)
                 {
                     centroMassa += boid.position;
                 }
@@ -41,13 +41,21 @@ namespace Terreno
             {
                 if (boid != tank)
                 {
-                    if (Vector3.Distance(boid.position, tank.position) < distanciaMin)
+                    if (tank.sargento && boid.sargento)
                     {
-                        distancia -= (boid.position - tank.position);
+                        distancia -= (boid.position - tank.position) * 80;
                     }
+                    else
+                    {
+                        if (Vector3.Distance(boid.position, tank.position) < distanciaMin)
+                        {
+                            distancia -= (boid.position - tank.position);
+                        }
+                    }
+                    
                 }
             }
-            return distancia * 1.5f;
+            return distancia;
         }
 
         //Faz com que andem juntinhos mais ou menos no mesmo sentido
@@ -73,9 +81,17 @@ namespace Terreno
         }
 
         //Dirigir-se para uma determinada posição
-        public static Vector3 moverParaDirecao(Tank tank, Vector3 posicao)
+        public static Vector3 moverParaDirecao(Tank tank, Vector3 posicao, bool alvoSargento)
         {
-            return (posicao - tank.position) / 20;
+            if (tank.sargento && alvoSargento)
+            {
+                return (posicao - tank.position) / 50f;
+            }
+            else
+            {
+                return (posicao - tank.position) / 20f;
+            }
+            
         }
 
     }

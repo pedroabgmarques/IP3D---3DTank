@@ -21,6 +21,7 @@ namespace Terreno
         private BoundingSphere boundingSphere;
         public bool alive;
         public Tank tanqueQueDisparou;
+        private Matrix[] transforms;
 
         public BoundingSphere BoundingSphere
         {
@@ -29,32 +30,45 @@ namespace Terreno
         }
         
 
-        public Bala(ContentManager content, Tank tanqueQueDisparou)
+        public Bala(ContentManager content)
         {
-            this.tanqueQueDisparou = tanqueQueDisparou;
-            speed = 0.2f;
-            alive = true;
+            speed = 0.3f;
+            alive = false;
 
             vetorBase = new Vector3(0, 0, 1);
 
+            LoadContent(content);
+        }
+
+        public void RestartBala(Tank tanqueQueDisparou, float desvioAleatorio)
+        {
+            this.alive = true;
+            this.totalTimePassed = 0;
+            this.tanqueQueDisparou = tanqueQueDisparou;
             this.inclinationMatrix = tanqueQueDisparou.inclinationMatrix;
             rotationMatrix = Matrix.CreateRotationX(tanqueQueDisparou.CannonRotation)
-                   * Matrix.CreateRotationY(tanqueQueDisparou.TurretRotation)
+                   * Matrix.CreateRotationY(tanqueQueDisparou.TurretRotation + desvioAleatorio)
                    * Matrix.CreateFromQuaternion(tanqueQueDisparou.inclinationMatrix.Rotation)
                    ;
-            Vector3 offset = new Vector3(0, 0.5f, 0.8f);
-           
+
             direcao = Vector3.Transform(vetorBase, rotationMatrix);
 
-            offset = Vector3.Transform(offset, rotationMatrix);
+            Vector3 offset = Vector3.Transform(new Vector3(0, 0.4f, 0), rotationMatrix);
+            offset = direcao + offset;
 
             position = tanqueQueDisparou.position + offset;
 
+            //DebugShapeRenderer.AddBoundingSphere(new BoundingSphere(position, 0.1f), Color.Red, 5);
+
             boundingSphere.Center = position;
             boundingSphere.Radius = 0.1f;
-
-            LoadContent(content);
         }
+
+        public void KillBala()
+        {
+            this.alive = false;
+        }
+
 
         private void LoadContent(ContentManager content)
         {
@@ -73,7 +87,7 @@ namespace Terreno
         public void Draw()
         {
             // Copy any parent transforms.
-            Matrix[] transforms = new Matrix[bala.Bones.Count];
+            transforms = new Matrix[bala.Bones.Count];
             bala.CopyAbsoluteBoneTransformsTo(transforms);
 
             // Draw the model. A model can have multiple meshes, so loop.
@@ -84,18 +98,26 @@ namespace Terreno
                 foreach (BasicEffect effect in mesh.Effects)
                 {
                     effect.EnableDefaultLighting();
-                    effect.World = Matrix.CreateScale(0.1f)
+                    effect.World = Matrix.CreateScale(0.05f)
                         * Matrix.CreateTranslation(this.position);
                     effect.View = Camera.View;
                     effect.Projection = Camera.Projection;
-                    effect.DiffuseColor = Color.Red.ToVector3();
+                    if (tanqueQueDisparou.equipa == Equipa.Empire)
+                    {
+                        effect.DiffuseColor = Color.Red.ToVector3();
+                    }
+                    else
+                    {
+                        effect.DiffuseColor = Color.DarkGreen.ToVector3();
+                    }
+                    
                 }
                 // Draw the mesh, using the effects set above.
                 mesh.Draw();
             }
 
             //DEBUG
-            DebugShapeRenderer.AddBoundingSphere(boundingSphere, Color.Yellow);
+            //DebugShapeRenderer.AddBoundingSphere(boundingSphere, Color.Yellow);
         }
     }
 }

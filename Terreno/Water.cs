@@ -28,6 +28,8 @@ namespace Terreno
 
         static private int width;
 
+        static SamplerState sampler;
+
         static public void GenerateWater(GraphicsDevice graphics, int largura)
         {
             width = largura / 2;
@@ -75,6 +77,10 @@ namespace Terreno
 
             indexBuffer = new IndexBuffer(graphics, typeof(int), indexes.Length, BufferUsage.WriteOnly);
             indexBuffer.SetData<int>(indexes);
+
+            sampler = new SamplerState();
+            sampler.Filter = TextureFilter.Anisotropic;
+            sampler.MaxAnisotropy = 4;
         }
 
         static public void Draw(GraphicsDevice graphics, BasicEffect efeito, BasicEffect efeitoDeepWater)
@@ -96,9 +102,7 @@ namespace Terreno
             //}
 
             // Define os filtros desejados
-            SamplerState sampler = new SamplerState();
-            sampler.Filter = TextureFilter.Anisotropic;
-            sampler.MaxAnisotropy = 16;
+            
             graphics.SamplerStates[0] = sampler;
 
             // Commit the changes to basic effect so it knows you made modifications  
