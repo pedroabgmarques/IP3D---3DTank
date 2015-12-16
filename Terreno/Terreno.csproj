@@ -49,11 +49,12 @@
     <Compile Include="Game1.cs" />
     <Compile Include="Particulas\ParticulaChuva.cs" />
     <Compile Include="Particulas\ParticulaExplosao.cs" />
+    <Compile Include="Particulas\ParticulaPo.cs" />
     <Compile Include="Particulas\SistemaParticulasChuva.cs" />
     <Compile Include="Particulas\SistemaParticulasExplosao.cs" />
+    <Compile Include="Particulas\SistemaParticulasPo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Skybox.cs" />
     <Compile Include="Tank.cs" />
     <Compile Include="Terrain.cs" />
     <Compile Include="Water.cs" />
@@ -93,12 +94,6 @@
     <None Include="Content\arial_12.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Content\deserto.xnb">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Content\cube.xnb">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Content\desert_texture.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -106,9 +101,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\engine_diff_tex_0.xnb">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Content\SkyBox.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Sphere.xnb">

@@ -58,4 +58,14 @@ namespace Terreno.Particulas
             }
         }
     }
+
+    /*
+     * Vector3 offset = new Vector3(-0.6f, 0.2f, -1f);
+        Matrix rotacao = Matrix.CreateTranslation(offset) * Matrix.CreateFromQuaternion(tank.rotacaoFinal.Rotation);
+        Vector3 transformOffset = Vector3.Transform(offset, rotacao);
+        this.posicaoCentro = transformOffset + tank.position;
+
+        this.worldMatrix = rotacao;
+        this.worldMatrix.Translation = transformOffset + tank.position;
+    */
 }

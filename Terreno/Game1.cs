@@ -25,12 +25,6 @@ namespace Terreno
         KeyboardState kbAnterior;
         SistemaParticulasChuva particulasChuva;
         int raioNuvem;
-        Skybox skybox;
-        DepthStencilState depthBufferDisabled = new DepthStencilState();
-        DepthStencilState depthBufferEnabled = new DepthStencilState();
-        RasterizerState rasterizerCullmodeNone = new RasterizerState();
-        RasterizerState rasterizerCullmodeClockwise = new RasterizerState();
-        RasterizerState originalRasterizerState;
 
         bool desenharTanques, desenharTerreno;
         
@@ -42,7 +36,7 @@ namespace Terreno
             graphics.PreferMultiSampling = true;
             graphics.PreferredBackBufferWidth = 1366; //683;
             graphics.PreferredBackBufferHeight = 768; //384;
-            graphics.IsFullScreen = true;
+            graphics.IsFullScreen = false;
             graphics.SynchronizeWithVerticalRetrace = true;
             Content.RootDirectory = "Content";
         }
@@ -65,11 +59,6 @@ namespace Terreno
             BalaManager.Initialize(Content);
 
             listaTanques = new List<Tank>();
-
-            depthBufferDisabled.DepthBufferEnable = false; /* Enable the depth buffer */
-            depthBufferDisabled.DepthBufferWriteEnable = false; /* When drawing to the screen, write to the depth buffer */
-            depthBufferEnabled.DepthBufferEnable = true; /* Enable the depth buffer */
-            depthBufferEnabled.DepthBufferWriteEnable = true; /* When drawing to the screen, write to the depth buffer */
 
             desenharTanques = true;
             desenharTerreno = true;
@@ -198,8 +187,6 @@ namespace Terreno
             anguloLuz = MathHelper.ToRadians(90);
             stepAnguloLuz = MathHelper.TwoPi / (360 * 5);
             //stepAnguloLuz = 0;
-
-            //skybox = new Skybox("deserto", Content);
         }
 
         private int ContarTanquesEquipa(Equipa equipa)
@@ -326,10 +313,7 @@ namespace Terreno
         {
             GraphicsDevice.Clear(new Color(0, 0, 15));
 
-            //desenharSkyBox();
-
             // TODO: Add your drawing code here
-            Create3DAxis.Draw(GraphicsDevice, efeito3DAxis);
 
             if(desenharTerreno)
                 Terrain.Draw(GraphicsDevice, efeitoTerrain);
@@ -343,7 +327,7 @@ namespace Terreno
                 {
                     if (Camera.frustum.Contains(tank.boundingSphere) != ContainmentType.Disjoint)
                     {
-                        tank.Draw(efeitoTerrain);
+                        tank.Draw(GraphicsDevice, efeitoTerrain);
                     }
 
                 }
@@ -362,6 +346,10 @@ namespace Terreno
 
             if (desenharTerreno) particulasChuva.Draw(GraphicsDevice, efeitoBasico);
             SistemaParticulasExplosao.Draw(GraphicsDevice, efeitoBasico);
+            foreach (Tank tank in listaTanques)
+            {
+                tank.sistemaParticulasPo.Draw(GraphicsDevice, efeitoBasico, tank);
+            }
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
 
@@ -387,16 +375,5 @@ namespace Terreno
             base.Draw(gameTime);
         }
 
-        private void desenharSkyBox()
-        {
-            //desenhar a SkyBox
-            GraphicsDevice.DepthStencilState = depthBufferDisabled;
-            originalRasterizerState = graphics.GraphicsDevice.RasterizerState;
-            graphics.GraphicsDevice.RasterizerState = rasterizerCullmodeNone;
-            skybox.Draw();
-            graphics.GraphicsDevice.RasterizerState = originalRasterizerState;
-            GraphicsDevice.DepthStencilState = depthBufferEnabled;
-
-        }
     }
 }

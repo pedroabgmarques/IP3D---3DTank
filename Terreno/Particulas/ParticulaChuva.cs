@@ -18,7 +18,7 @@ namespace Terreno.Particulas
         //Array de vértices da particula
         private VertexPositionColor[] vertexes;
 
-        public ParticulaChuva(Vector3 posicao, float velocidadeMedia, float perturbacao, Random random)
+        public ParticulaChuva(Vector3 posicao, float velocidadeMedia, float perturbacao, Random random, Color cor)
         {
             //Inicializar o array de vértices (dois vértices para cada particula)
             vertexes = new VertexPositionColor[2];
@@ -29,8 +29,8 @@ namespace Terreno.Particulas
             this.perturbacao = perturbacao;
 
             //Gerar os dois vértices da particula, um ligeiramente mais abaixo que o outro
-            vertexes[0] = new VertexPositionColor(this.posicao, Color.White);
-            vertexes[1] = new VertexPositionColor(this.posicao - new Vector3(0, 0.1f, 0), Color.White);
+            vertexes[0] = new VertexPositionColor(this.posicao, cor);
+            vertexes[1] = new VertexPositionColor(this.posicao - new Vector3(0, 0.1f, 0), cor);
 
             //Calcular direção da particula
             direcao = Vector3.Down;

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Terreno.Particulas;
 
 namespace Terreno
 {
@@ -38,6 +39,8 @@ namespace Terreno
 
         List<Tank> listaAlvosPotenciais;
         bool readyToFire = false;
+
+        public SistemaParticulasPo sistemaParticulasPo;
 
         public void ativarTanque(List<Tank> listaTanques)
         {
@@ -189,7 +192,7 @@ namespace Terreno
             contadorVerificarCentroMassaMax = random.Next(1000, 4000);
             centroMassa = Vector3.Zero;
 
-
+            sistemaParticulasPo = new SistemaParticulasPo(random, 20, this);
         }
 
         /// <summary>
@@ -234,7 +237,8 @@ namespace Terreno
             if (tanqueAtivo)
             {
                 //Tanque controlado pelo utilizador
-                UpdateInput(gameTime, content);
+                UpdateInput(gameTime, content, random);
+                sistemaParticulasPo.Update(random, gameTime, this);
             }
             else
             {
@@ -474,7 +478,7 @@ namespace Terreno
             
         }
 
-        private void UpdateInput(GameTime gameTime, ContentManager content)
+        private void UpdateInput(GameTime gameTime, ContentManager content, Random random)
         {
             KeyboardState currentKeyboardState = Keyboard.GetState();
 
@@ -630,7 +634,7 @@ namespace Terreno
         /// <summary>
         /// Draws the tank model, using the current animation settings.
         /// </summary>
-        public void Draw(BasicEffect efeito)
+        public void Draw(GraphicsDevice graphics, BasicEffect efeito)
         {
             // Set the world matrix as the root transform of the model.
             tankModel.Root.Transform = world;

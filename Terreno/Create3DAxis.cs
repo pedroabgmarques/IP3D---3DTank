@@ -40,10 +40,10 @@ namespace Terreno
         /// Desenha a geometria
         /// </summary>
         /// <param name="graphics">Instância de graphicsDevice</param>
-        static public void Draw(GraphicsDevice graphics, BasicEffect efeito)
+        static public void Draw(GraphicsDevice graphics, BasicEffect efeito, Matrix world)
         {
             //World, View, Projection
-            efeito.World = Camera.World;
+            efeito.World = world;
             efeito.View = Camera.View;
             efeito.Projection = Camera.Projection;
 

@@ -63,7 +63,7 @@ namespace Terreno.Particulas
             posicao.Z = centroNuvem.X + raioNuvem * magnitude * (float)Math.Sin(angulo);
 
             //Adicionar nova particula à lista de particulas deste sistema
-            particulas.Add(new ParticulaChuva(posicao, velocidadeMedia, perturbacao, random));
+            particulas.Add(new ParticulaChuva(posicao, velocidadeMedia, perturbacao, random, Color.White));
         }
 
         public void Update(Random random)
