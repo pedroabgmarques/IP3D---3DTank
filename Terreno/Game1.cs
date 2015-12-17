@@ -59,7 +59,7 @@ namespace Terreno
             BalaManager.Initialize(Content);
 
             listaTanques = new List<Tank>();
-
+            this.Window.Title = "Tank Simulator";
             desenharTanques = true;
             desenharTerreno = true;
 
