@@ -47,6 +47,7 @@
     <Compile Include="DebugShapeRenderer.cs" />
     <Compile Include="Equipas.cs" />
     <Compile Include="Game1.cs" />
+    <Compile Include="Palmeira.cs" />
     <Compile Include="Particulas\ParticulaChuva.cs" />
     <Compile Include="Particulas\ParticulaExplosao.cs" />
     <Compile Include="Particulas\ParticulaPo.cs" />
@@ -101,6 +102,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\engine_diff_tex_0.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\MY_PALM.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\palm1_uv_m2_0.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\sand.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Sphere.xnb">

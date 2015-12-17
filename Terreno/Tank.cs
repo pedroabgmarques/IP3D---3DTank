@@ -195,7 +195,7 @@ namespace Terreno
             contadorVerificarCentroMassaMax = random.Next(1000, 4000);
             centroMassa = Vector3.Zero;
 
-            sistemaParticulasPo = new SistemaParticulasPo(random, 10, this);
+            sistemaParticulasPo = new SistemaParticulasPo(random, 1, this);
         }
 
         /// <summary>
@@ -234,9 +234,10 @@ namespace Terreno
         }
 
         
-        public void Update(GameTime gameTime, List<Tank> listaTanques, Tank player, ContentManager content, Random random)
+        public void Update(GameTime gameTime, List<Tank> listaTanques, Tank player, ContentManager content, Random random, List<Palmeira> listaPalmeiras)
         {
-            sistemaParticulasPo.Update(random, gameTime, this);
+            moving = false;
+
             if (tanqueAtivo)
             {
                 //Tanque controlado pelo utilizador
@@ -352,6 +353,8 @@ namespace Terreno
                 direcaoAnterior = direcao;
             }
 
+            sistemaParticulasPo.Update(random, gameTime, this);
+
             //Atualizar posição do collider do tanque
             boundingSphere.Center = Vector3.Transform(Vector3.Zero, this.world);
 
@@ -360,6 +363,9 @@ namespace Terreno
 
             //Manter tanque dentro dos limites do terreno
             CollisionDetector.CollisionTankFrontiers(this);
+
+            //Colisões com palmeiras
+            //CollisionDetector.CollisionTankPalmeira(this, listaPalmeiras);
 
             positionAnterior = position;
             contadorVerificarCentroMassa++;
@@ -484,8 +490,6 @@ namespace Terreno
 
         private void UpdateInput(GameTime gameTime, ContentManager content, Random random)
         {
-
-            moving = false;
 
             KeyboardState currentKeyboardState = Keyboard.GetState();
 

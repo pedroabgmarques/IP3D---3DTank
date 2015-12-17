@@ -103,7 +103,7 @@ namespace Terreno
             //Criar e definir os resterizerStates a utilizar para desenhar a geometria
             //SOLID
             rasterizerStateSolid = new RasterizerState();
-            rasterizerStateSolid.CullMode = CullMode.CullCounterClockwiseFace;
+            rasterizerStateSolid.CullMode = CullMode.None;
             rasterizerStateSolid.MultiSampleAntiAlias = true;
             rasterizerStateSolid.FillMode = FillMode.Solid;
             rasterizerStateSolid.SlopeScaleDepthBias = 0.1f;

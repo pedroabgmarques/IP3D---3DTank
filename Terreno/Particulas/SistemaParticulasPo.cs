@@ -12,9 +12,7 @@ namespace Terreno.Particulas
         //Propriedades do sistema de particulas
         //Lista de particulas
         List<ParticulaPo> particulas;
-        Vector3 posicaoCentro;
         Vector3 offset;
-        Vector3 transformedOffset;
         Matrix rotacao;
         int nParticulasSegundo;
 
@@ -42,8 +40,19 @@ namespace Terreno.Particulas
                 Matrix worldSistema = rotacao;
                 worldSistema.Translation = transformedOffset + tank.position;
 
+                Color cor;
+                //Inicilizar propriedades
+                if (tank.position.Y < 1.5f)
+                {
+                    cor = Color.Blue;
+                }
+                else
+                {
+                    cor = Color.Chocolate;
+                }
+
                 //Adicionar nova particula à lista de particulas deste sistema
-                particulas.Add(new ParticulaPo(velocidadeMedia, perturbacao, random, Color.Chocolate, tank, worldSistema));
+                particulas.Add(new ParticulaPo(velocidadeMedia, perturbacao, random, cor, tank, worldSistema));
             }
             
         }

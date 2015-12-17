@@ -94,5 +94,20 @@ namespace Terreno
             }
         }
 
+        static public void CollisionTankPalmeira(Tank tank, List<Palmeira> listaPalmeiras)
+        {
+            
+            foreach (Palmeira palmeira in listaPalmeiras)
+            {
+                if (tank.boundingSphere.Intersects(palmeira.boundingBox))
+                {
+                    tank.position = tank.positionAnterior;
+                    tank.direcao += Vector3.Right;
+                        
+                }
+            }
+            
+        }
+
     }
 }

@@ -25,6 +25,7 @@ namespace Terreno
         KeyboardState kbAnterior;
         SistemaParticulasChuva particulasChuva;
         int raioNuvem;
+        List<Palmeira> listaPalmeiras;
 
         bool desenharTanques, desenharTerreno;
         
@@ -36,7 +37,7 @@ namespace Terreno
             graphics.PreferMultiSampling = true;
             graphics.PreferredBackBufferWidth = 1366; //683;
             graphics.PreferredBackBufferHeight = 768; //384;
-            graphics.IsFullScreen = false;
+            graphics.IsFullScreen = true;
             graphics.SynchronizeWithVerticalRetrace = true;
             Content.RootDirectory = "Content";
         }
@@ -59,6 +60,7 @@ namespace Terreno
             BalaManager.Initialize(Content);
 
             listaTanques = new List<Tank>();
+            listaPalmeiras = new List<Palmeira>();
 
             desenharTanques = true;
             desenharTerreno = true;
@@ -76,7 +78,7 @@ namespace Terreno
 
             //Load assets
             heightmap = Content.Load<Texture2D>("heightmap");
-            terrainTexture = Content.Load<Texture2D>("desert_texture");
+            terrainTexture = Content.Load<Texture2D>("sand");
             waterTexture = Content.Load<Texture2D>("water_texture");
             spriteFont = Content.Load<SpriteFont>("arial_12");
 
@@ -85,11 +87,22 @@ namespace Terreno
 
             raioNuvem = Terrain.altura / 2;
 
-            particulasChuva = new SistemaParticulasChuva(random, raioNuvem / 2, 100, 20);
+            particulasChuva = new SistemaParticulasChuva(random, raioNuvem / 2, 100, 50);
             SistemaParticulasExplosao.Initialize(random);
 
             //Gerar água
             Water.GenerateWater(GraphicsDevice, heightmap.Width);
+
+            //Gerar palmeiras
+            Model modeloPalmeira = Content.Load<Model>("MY_PALM");
+            for (int i = 0; i < 30; i++)
+            {
+                int x, z;
+                x = random.Next(10, Terrain.altura - 10);
+                z = random.Next(10, Terrain.altura - 10);
+                listaPalmeiras.Add(new Palmeira(modeloPalmeira, new Vector3(x, Terrain.getAlturaFromHeightmap(new Vector3(x, 0, z)), z)));
+            }
+                
 
             Equipa equipa;
             for (int i = 0; i < 32; i++)
@@ -141,7 +154,7 @@ namespace Terreno
             efeitoTerrain.LightingEnabled = true; // ativar a iluminação
             efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(0.48f, 0.48f, 0.48f);
             efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
-            efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0.08f, 0.08f, 0.08f);
+            efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0, 0, 0);
             efeitoTerrain.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
             efeitoTerrain.EmissiveColor = new Vector3(0f, 0f, 0f);
             efeitoTerrain.DirectionalLight0.Enabled = true;
@@ -266,12 +279,12 @@ namespace Terreno
 
             foreach (Tank tank in listaTanques)
             {
-                tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()), Content, random);
+                tank.Update(gameTime, listaTanques, listaTanques.Find(x => x.isAtivo()), Content, random, listaPalmeiras);
             }
 
             Camera.Update(gameTime, GraphicsDevice, listaTanques.Find(x => x.isAtivo()));
 
-            particulasChuva.Update(random);
+            particulasChuva.Update(random, gameTime);
             SistemaParticulasExplosao.Update(random, gameTime);
 
             //Colisões entre balas e tanques
@@ -352,6 +365,11 @@ namespace Terreno
             }
 
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
+
+            foreach (Palmeira palmeira in listaPalmeiras)
+            {
+                palmeira.Draw(efeitoTerrain);
+            }
 
             if (desenharTerreno)
                 Water.Draw(GraphicsDevice, efeitoWater, efeitoDeepWater);

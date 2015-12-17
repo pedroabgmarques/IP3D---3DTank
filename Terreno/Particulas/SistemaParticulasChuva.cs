@@ -66,12 +66,12 @@ namespace Terreno.Particulas
             particulas.Add(new ParticulaChuva(posicao, velocidadeMedia, perturbacao, random, Color.White));
         }
 
-        public void Update(Random random)
+        public void Update(Random random, GameTime gameTime)
         {
             //Atualizar as particulas de chuva
             foreach (ParticulaChuva particula in particulas)
             {
-                particula.Update();
+                particula.Update(gameTime);
             }
             //Verificar particulas que devem morrer e criar novas particulas para as substituir
             matarERenascerParticulas(random);

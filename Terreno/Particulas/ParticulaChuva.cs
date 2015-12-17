@@ -12,6 +12,7 @@ namespace Terreno.Particulas
         //Propriedades da particula
         public Vector3 posicao;
         float velocidadeMedia;
+        private float totalTimePassed;
         float perturbacao;
         Vector3 direcao;
 
@@ -42,14 +43,18 @@ namespace Terreno.Particulas
             
         }
 
-        public void Update()
+        public void Update(GameTime gameTime)
         {
             //Atualizar posição da particula
             posicao += direcao;
+            totalTimePassed += (float)gameTime.ElapsedGameTime.Milliseconds / 4096.0f;
+            posicao.Y -= totalTimePassed * totalTimePassed * velocidadeMedia * 7f; //Gravidade
 
             //Atualizar vértices da particula
             vertexes[0].Position = posicao;
+            vertexes[0].Color = Color.Blue;
             vertexes[1].Position = posicao - new Vector3(0, 0.1f, 0);
+            vertexes[1].Color = Color.LightBlue;
         }
 
         public void Draw(GraphicsDevice graphics, BasicEffect efeito)
