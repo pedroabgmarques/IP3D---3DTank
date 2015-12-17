@@ -70,6 +70,8 @@ namespace Terreno
             return this.tanqueAtivo;
         }
 
+        public bool moving;
+
         public BoundingSphere boundingSphere;
 
 
@@ -165,6 +167,7 @@ namespace Terreno
 
         public Tank(Random random, GraphicsDevice graphicsDevice, Vector3 position, Equipa equipa)
         {
+            moving = false;
             alive = true;
             vizinhanca = new List<Tank>(300);
             listaAlvosPotenciais = new List<Tank>(300);
@@ -192,7 +195,7 @@ namespace Terreno
             contadorVerificarCentroMassaMax = random.Next(1000, 4000);
             centroMassa = Vector3.Zero;
 
-            sistemaParticulasPo = new SistemaParticulasPo(random, 20, this);
+            sistemaParticulasPo = new SistemaParticulasPo(random, 10, this);
         }
 
         /// <summary>
@@ -233,12 +236,12 @@ namespace Terreno
         
         public void Update(GameTime gameTime, List<Tank> listaTanques, Tank player, ContentManager content, Random random)
         {
-
+            sistemaParticulasPo.Update(random, gameTime, this);
             if (tanqueAtivo)
             {
                 //Tanque controlado pelo utilizador
                 UpdateInput(gameTime, content, random);
-                sistemaParticulasPo.Update(random, gameTime, this);
+                
             }
             else
             {
@@ -300,6 +303,7 @@ namespace Terreno
 
                     if ((direcao - direcaoAnterior).Length() > 0.0065f)
                     {
+                        moving = true;
                         //Se a "vontade" de mover é suficientemente forte..
                         direcao.Normalize();
                         position += direcao * velocidade;
@@ -480,6 +484,9 @@ namespace Terreno
 
         private void UpdateInput(GameTime gameTime, ContentManager content, Random random)
         {
+
+            moving = false;
+
             KeyboardState currentKeyboardState = Keyboard.GetState();
 
             steerRotationValue = 0;
@@ -528,6 +535,7 @@ namespace Terreno
                 this.wheelFrontRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
 
                 position += Vector3.Normalize(direcao) * velocidade;
+                moving = true;
             }
 
             if (currentKeyboardState.IsKeyDown(Keys.NumPad2))
@@ -539,6 +547,7 @@ namespace Terreno
                 this.wheelFrontRightRotationValue = -(float)gameTime.TotalGameTime.TotalSeconds * 5;
 
                 position -= Vector3.Normalize(direcao) * velocidade;
+                moving = true;
             }
 
             if (currentKeyboardState.IsKeyDown(Keys.NumPad6))

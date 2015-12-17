@@ -23,25 +23,29 @@ namespace Terreno.Particulas
             //Inicializar as propriedades
             this.nParticulasSegundo = nParticulas;
             particulas = new List<ParticulaPo>(1000);
-            offset = new Vector3(0, 0.15f, -0.45f);
+            offset = new Vector3(0, 0f, -0.15f);
             
         }
 
         private void inserirNovaParticula(Random random, Tank tank)
         {
+            if (tank.moving)
+            {
+                rotacao = Matrix.CreateTranslation(offset) * Matrix.CreateFromQuaternion(tank.inclinationMatrix.Rotation);
+                Vector3 transformedOffset = Vector3.Transform(offset, rotacao);
 
-            rotacao = Matrix.CreateFromQuaternion(tank.inclinationMatrix.Rotation) * Matrix.CreateTranslation(tank.position);
+                Vector3 posicao = Vector3.Zero;
 
-            Vector3 posicao = Vector3.Zero;
-            posicao.X = (float)random.NextDouble() * 1.8f * 0.5f - 0.5f;
+                float velocidadeMedia = 0.01f;
+                float perturbacao = 0.005f;
 
-            posicao = Vector3.Transform(posicao + offset, rotacao);
+                Matrix worldSistema = rotacao;
+                worldSistema.Translation = transformedOffset + tank.position;
 
-            float velocidadeMedia = 0.01f;
-            float perturbacao = 0.005f;
-
-            //Adicionar nova particula à lista de particulas deste sistema
-            particulas.Add(new ParticulaPo(posicao, velocidadeMedia, perturbacao, random, Color.Chocolate, tank));
+                //Adicionar nova particula à lista de particulas deste sistema
+                particulas.Add(new ParticulaPo(velocidadeMedia, perturbacao, random, Color.Chocolate, tank, worldSistema));
+            }
+            
         }
 
         public void Update(Random random, GameTime gameTime, Tank tank)
