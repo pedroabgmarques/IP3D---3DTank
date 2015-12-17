@@ -60,10 +60,12 @@ namespace Terreno
             BalaManager.Initialize(Content);
 
             listaTanques = new List<Tank>();
+<<<<<<< HEAD
             listaPalmeiras = new List<Palmeira>();
 
-
+=======
             this.Window.Title = "Tank Simulator";
+>>>>>>> 61f4f03151fe725941845c53ad56e94c637726e0
             desenharTanques = true;
             desenharTerreno = true;
 
