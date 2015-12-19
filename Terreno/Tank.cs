@@ -246,111 +246,8 @@ namespace Terreno
             }
             else
             {
-
                 //Tanque controlado por IA
-
-                //Surface follow
-                position.Y = Terrain.getAlturaFromHeightmap(position);
-
-                //IA
-                float maxDistanciaVizinhanca = 20;
-
-                vizinhanca.Clear();
-                foreach (Tank tank in listaTanques)
-                {
-                    if (tank != this && Vector3.Distance(tank.position, this.position) < maxDistanciaVizinhanca)
-                    {
-                        vizinhanca.Add(tank);
-                    }
-                }
-
-                if (contadorVerificarCentroMassa > contadorVerificarCentroMassaMax
-                    || centroMassa == Vector3.Zero)
-                {
-                    centroMassa = AI.centroMassaBoids(listaTanques, this);
-                    contadorVerificarCentroMassa = 0;
-                }
-                Vector3 manterDistancia = AI.manterDistancia(vizinhanca, this, 3f);
-                Vector3 combinarDirecao = AI.combinarDirecao(vizinhanca, this);
-
-                Tank sargento = encontrarSargentoEquipa(listaTanques);
-
-                if (alvo != null && (!alvo.alive || !listaTanques.Contains(alvo)))
-                {
-                    alvo = null;
-                }
-
-                if (alvo == null && contarAlvosPotenciais(listaTanques) > 0)
-                {
-                    alvo = encontrarAlvo(player, listaTanques, random);
-                }
-                
-                if (alvo != null)
-                {
-                    Vector3 moverParaDirecao;
-                    if (this.sargento)
-                    {
-                        moverParaDirecao = AI.moverParaDirecao(this, alvo.position, alvo.sargento);
-                    }
-                    else
-                    {
-                        moverParaDirecao = AI.moverParaDirecao(this, sargento.position, false);
-                    }
-
-                    direcao += manterDistancia + moverParaDirecao + combinarDirecao + centroMassa;
-
-                    //Impede o tanque de virar instantâneamente
-                    direcao = Vector3.Lerp(direcaoAnterior, direcao, 0.01f);
-
-                    if ((direcao - direcaoAnterior).Length() > 0.0065f)
-                    {
-                        moving = true;
-                        //Se a "vontade" de mover é suficientemente forte..
-                        direcao.Normalize();
-                        position += direcao * velocidade;
-
-                        //Rodar as rodas porque estamos a andar
-                        this.wheelBackLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
-                        this.wheelBackRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
-                        this.wheelFrontLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
-                        this.wheelFrontRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
- 
-                    }
-                    else
-                    {
-
-                        //Estamos parados,  disparar
-                        direcao = direcaoAnterior;
-
-                        if (readyToFire && lastCannonFire > 300)
-                        {
-                            //Canhão em posição, arma recarregada, FIRE!
-
-                            //Desvio aleatório para tornar a coisa mais interessante
-                            float desvioAleatorio = random.Next(-1200, 1200) / 10000f;
-
-                            BalaManager.ShootBala(this, desvioAleatorio);
-
-                            lastCannonFire = 0;
-                        }
-                    }
-                }
-
-                lastCannonFire++;
-
-                rotateCannonToTarget();
-
-                Vector3 Up = Terrain.getNormalFromHeightmap(position);
-                Vector3 Right = Vector3.Cross(Up, direcao);
-                Vector3 Frente = Vector3.Cross(Up, Right);
-
-                inclinationMatrix = Matrix.CreateWorld(position, Frente, Up);
-
-                this.world = inclinationMatrix
-                        * Matrix.CreateScale(scale)
-                        * Matrix.CreateTranslation(position);
-
-                direcaoAnterior = direcao;
+                UpdateIA(listaTanques, player, random, gameTime);
             }
 
             sistemaParticulasPo.Update(random, gameTime, this);
@@ -369,6 +266,112 @@ namespace Terreno
 
             positionAnterior = position;
             contadorVerificarCentroMassa++;
+        }
+
+        private void UpdateIA(List<Tank> listaTanques, Tank player, Random random, GameTime gameTime)
+        {
+            //Surface follow
+            position.Y = Terrain.getAlturaFromHeightmap(position);
+
+            //IA
+            float maxDistanciaVizinhanca = 20;
+
+            vizinhanca.Clear();
+            foreach (Tank tank in listaTanques)
+            {
+                if (tank != this && Vector3.Distance(tank.position, this.position) < maxDistanciaVizinhanca)
+                {
+                    vizinhanca.Add(tank);
+                }
+            }
+
+            if (contadorVerificarCentroMassa > contadorVerificarCentroMassaMax
+                || centroMassa == Vector3.Zero)
+            {
+                centroMassa = AI.centroMassaBoids(listaTanques, this);
+                contadorVerificarCentroMassa = 0;
+            }
+            Vector3 manterDistancia = AI.manterDistancia(vizinhanca, this, 3f);
+            Vector3 combinarDirecao = AI.combinarDirecao(vizinhanca, this);
+
+            Tank sargento = encontrarSargentoEquipa(listaTanques);
+
+            if (alvo != null && (!alvo.alive || !listaTanques.Contains(alvo)))
+            {
+                alvo = null;
+            }
+
+            if (alvo == null && contarAlvosPotenciais(listaTanques) > 0)
+            {
+                alvo = encontrarAlvo(player, listaTanques, random);
+            }
+
+            if (alvo != null)
+            {
+                Vector3 moverParaDirecao;
+                if (this.sargento)
+                {
+                    moverParaDirecao = AI.moverParaDirecao(this, alvo.position, alvo.sargento);
+                }
+                else
+                {
+                    moverParaDirecao = AI.moverParaDirecao(this, sargento.position, false);
+                }
+
+                direcao += manterDistancia + moverParaDirecao + combinarDirecao + centroMassa;
+
+                //Impede o tanque de virar instantâneamente
+                direcao = Vector3.Lerp(direcaoAnterior, direcao, 0.01f);
+
+                if ((direcao - direcaoAnterior).Length() > 0.0065f)
+                {
+                    moving = true;
+                    //Se a "vontade" de mover é suficientemente forte..
+                    direcao.Normalize();
+                    position += direcao * velocidade;
+
+                    //Rodar as rodas porque estamos a andar
+                    this.wheelBackLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+                    this.wheelBackRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+                    this.wheelFrontLeftRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+                    this.wheelFrontRightRotationValue = (float)gameTime.TotalGameTime.TotalSeconds * 5;
+
+                }
+                else
+                {
+
+                    //Estamos parados,  disparar
+                    direcao = direcaoAnterior;
+
+                    if (readyToFire && lastCannonFire > 300)
+                    {
+                        //Canhão em posição, arma recarregada, FIRE!
+
+                        //Desvio aleatório para tornar a coisa mais interessante
+                        float desvioAleatorio = random.Next(-1200, 1200) / 10000f;
+
+                        BalaManager.ShootBala(this, desvioAleatorio);
+
+                        lastCannonFire = 0;
+                    }
+                }
+            }
+
+            lastCannonFire++;
+
+            rotateCannonToTarget();
+
+            Vector3 Up = Terrain.getNormalFromHeightmap(position);
+            Vector3 Right = Vector3.Cross(Up, direcao);
+            Vector3 Frente = Vector3.Cross(Up, Right);
+
+            inclinationMatrix = Matrix.CreateWorld(position, Frente, Up);
+
+            this.world = inclinationMatrix
+                    * Matrix.CreateScale(scale)
+                    * Matrix.CreateTranslation(position);
+
+            direcaoAnterior = direcao;
         }
 
         private void rotateCannonToTarget()
@@ -712,11 +715,6 @@ namespace Terreno
                 {
                     DebugShapeRenderer.AddBoundingSphere(boundingSphere, Color.Green);
                 }
-                else
-                {
-                    DebugShapeRenderer.AddBoundingSphere(boundingSphere, Color.Red);
-                }
-
             }
         }
     }

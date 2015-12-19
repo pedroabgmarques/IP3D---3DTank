@@ -37,7 +37,7 @@ namespace Terreno
             graphics.PreferMultiSampling = true;
             graphics.PreferredBackBufferWidth = 1366; //683;
             graphics.PreferredBackBufferHeight = 768; //384;
-            graphics.IsFullScreen = true;
+            graphics.IsFullScreen = false;
             graphics.SynchronizeWithVerticalRetrace = true;
             Content.RootDirectory = "Content";
         }
@@ -84,6 +84,8 @@ namespace Terreno
             waterTexture = Content.Load<Texture2D>("water_texture");
             spriteFont = Content.Load<SpriteFont>("arial_12");
 
+           
+
             //Generate terrain
             Terrain.GenerateTerrain(GraphicsDevice, heightmap);
 
@@ -113,11 +115,11 @@ namespace Terreno
                 Tank tank;
                 if (equipa == Equipa.Empire)
                 {
-                    tank = new Tank(random, GraphicsDevice, new Vector3(random.Next(Terrain.altura - 80, Terrain.altura - 10), 5, random.Next(10, 80)), equipa);
+                    tank = new Tank(random, GraphicsDevice, new Vector3(random.Next(Terrain.altura - 40, Terrain.altura - 10), 5, random.Next(10, 40)), equipa);
                 }
                 else
                 {
-                    tank = new Tank(random, GraphicsDevice, new Vector3(random.Next(10, 80), 5, random.Next(Terrain.altura - 80, Terrain.altura - 10)), equipa);
+                    tank = new Tank(random, GraphicsDevice, new Vector3(random.Next(10, 40), 5, random.Next(Terrain.altura - 40, Terrain.altura - 10)), equipa);
                 }
                 
                 tank.LoadContent(Content);
@@ -157,7 +159,7 @@ namespace Terreno
             efeitoTerrain.DirectionalLight0.DiffuseColor = new Vector3(0.58f, 0.58f, 0.58f);
             efeitoTerrain.DirectionalLight0.Direction = new Vector3(0, 1, 0);
             efeitoTerrain.DirectionalLight0.SpecularColor = new Vector3(0, 0, 0);
-            efeitoTerrain.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
+            efeitoTerrain.AmbientLightColor = new Vector3(0.3f, 0.3f, 0.3f);
             efeitoTerrain.EmissiveColor = new Vector3(0f, 0f, 0f);
             efeitoTerrain.DirectionalLight0.Enabled = true;
             efeitoTerrain.FogColor = new Color(0, 0, 15).ToVector3();

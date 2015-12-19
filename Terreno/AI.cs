@@ -9,7 +9,7 @@ namespace Terreno
     static public class AI
     {
         /// <summary>
-        /// Calcula o centro de massa de todos os boids, excluindo ele proprio
+        /// Calcula o centro de massa de todos os boids da sua equipa, excluindo ele proprio
         /// </summary>
         /// <param name="lista">Lista de todos os boids</param>
         /// <returns></returns>
@@ -23,7 +23,7 @@ namespace Terreno
                 }
             }
             centroMassa = centroMassa / (lista.Count - 1);
-            return (centroMassa - tank.position) / 500; //Move 1% do caminho        
+            return (centroMassa - tank.position) / 500; //Move 0.5% do caminho       
         }
 
         /// <summary>
@@ -65,18 +65,15 @@ namespace Terreno
 
             foreach (Tank boid in lista)
             {
-                if (boid != tank)
+                if (boid != tank && tank.equipa == boid.equipa)
                 {
                     direcao += boid.direcao;
                 }
             }
-
             if (lista.Count > 1)
             {
                 direcao = direcao / (lista.Count - 1);
             }
-            
-
             return (direcao - tank.direcao) / 64;
         }
 

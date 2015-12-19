@@ -44,7 +44,7 @@ namespace Terreno.Particulas
             //Calcular direção da particula
             direcao.X = tank.inclinationMatrix.Backward.X * (float)random.NextDouble() * (1f * perturbacao - perturbacao);
             direcao.Z = tank.inclinationMatrix.Backward.Z * (float)random.NextDouble() * (1f * perturbacao - perturbacao);
-            direcao += new Vector3(0, 0.000001f, 0);
+            direcao += new Vector3(0, 0.01f, -0.01f);
             direcao.Normalize();
             direcao *= (float)random.NextDouble() * velocidadeMedia + perturbacao;
 

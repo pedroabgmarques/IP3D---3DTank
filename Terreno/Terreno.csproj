@@ -45,7 +45,7 @@
     <Compile Include="CollisionDetector.cs" />
     <Compile Include="Create3DAxis.cs" />
     <Compile Include="DebugShapeRenderer.cs" />
-    <Compile Include="Equipas.cs" />
+    <Compile Include="Equipa.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Palmeira.cs" />
     <Compile Include="Particulas\ParticulaChuva.cs" />
