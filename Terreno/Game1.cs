@@ -37,7 +37,7 @@ namespace Terreno
             graphics.PreferMultiSampling = true;
             graphics.PreferredBackBufferWidth = 1366; //683;
             graphics.PreferredBackBufferHeight = 768; //384;
-            graphics.IsFullScreen = false;
+            graphics.IsFullScreen = true;
             graphics.SynchronizeWithVerticalRetrace = true;
             Content.RootDirectory = "Content";
         }
